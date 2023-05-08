@@ -16,7 +16,7 @@ The versions are just what I used and not necessarily strict requirements.
 All training code is contained within `main.py`. To view options simply run:
 
 ```shell
-python main.py --help
+python main_old.py --help
 ```
 The "Cooperative Treasure Collection" environment from our paper is referred to as `fullobs_collect_treasure` in this repo, and "Rover-Tower" is referred to as `multi_speaker_listener`.
 

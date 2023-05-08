@@ -1,0 +1,43 @@
+{
+  "market": {
+    "token": [
+      {
+        "name": "testToken", 
+        "price": 42.0,
+        "asset_volatility": 0.1
+      },
+      {
+        "name": "anotherToken",
+        "price": 69.0,
+        "asset_volatility": 0.2
+      }
+    ]
+  },
+  "lending_protocol": {
+    "plf_pool": [
+      {
+        "token_name": "testToken",
+        "initial_starting_funds": 100,
+        "collateral_factor": 0.85
+      },
+      {
+        "token_name": "anotherToken",
+        "initial_starting_funds": 100,
+        "collateral_factor": 0.85
+      }
+    ]
+  },
+  "agent": [
+    {
+      "name": "GovAgent",
+      "type": "governance"
+    },
+    {
+      "name": "UserAgent",
+      "type": "user"
+    }
+  ],
+  "trainer": {
+    "lr": 0.01
+  }
+}
