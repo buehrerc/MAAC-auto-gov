@@ -6,6 +6,7 @@ from gym.core import ActType, ObsType, RenderFrame
 from envs.market_env.lending_protocol import LendingProtocol
 from envs.market_env.market import Market
 from envs.market_env.utils import combine_observation_space
+from utils.agents import AttentionAgent
 
 
 class MultiAgentEnv(gym.Env):
@@ -47,3 +48,5 @@ class MultiAgentEnv(gym.Env):
         state = torch.cat([lp_state, market_state])
         return state, reward, terminated, truncated, lp_logs
 
+    def set_agents(self, agent_list: List[AttentionAgent]) -> None:
+        self.lending_protocol.set_agents(agent_list)

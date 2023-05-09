@@ -34,7 +34,11 @@
     },
     {
       "name": "UserAgent",
-      "type": "user"
+      "type": "user",
+      "balance": {
+          "testToken": 1000,
+          "anotherToken": 1500
+      }
     }
   ],
   "trainer": {

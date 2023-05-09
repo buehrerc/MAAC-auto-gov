@@ -11,10 +11,10 @@ for all agents. Each element of the list should be a numpy array,
 of size (env.world.dim_p + env.world.dim_c, 1). Physical actions precede
 communication actions in this array. See environment.py for more details.
 """
+from envs.market_env.env import MultiAgentEnv
 
 
-def make_env(config, benchmark=False, discrete_action=False):
-    from envs.market_env.env import MultiAgentEnv
+def make_env(config, benchmark=False, discrete_action=False) -> MultiAgentEnv:
     from envs.market_env.market import Market
     from envs.market_env.lending_protocol import LendingProtocol
 

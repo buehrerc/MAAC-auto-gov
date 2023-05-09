@@ -1,10 +1,10 @@
-import numpy as np
 import torch
-from typing import List, Tuple
-from gym.core import ObsType
+import numpy as np
+from typing import Dict, List, Tuple
 from gym import spaces
+from gym.core import ObsType
+from utils.agents import AttentionAgent
 from envs.market_env.market import Market
-
 from envs.market_env.constants import (
     INITIATOR,
     COLLATERAL_FACTOR_CHANGE_RATE,
@@ -60,6 +60,7 @@ class PLFPool:
         # General Properties
         self.token_name = token_name
         self.agent_mask = agent_mask
+        self.agent_list = None
         self.token = market.get_token(self.token_name)
         self.col_factor_change_rate = col_factor_change_rate
         self.asset_price = self.token.get_price()
@@ -67,13 +68,11 @@ class PLFPool:
         self.collateral_factor: float = collateral_factor
 
         # Interest Tokens
-        self.user_interest_token: dict[str, float] = {INITIATOR: initial_starting_funds}
-        self.user_borrow_token: dict[str, float] = {INITIATOR: 0.0}
+        self.user_supply_token: Dict[str, List] = {INITIATOR: [initial_starting_funds]}
+        self.user_borrow_token: Dict[str, List] = dict()
 
         # KPI Properties
         self.profit: float = 0.0
-        self.total_borrowed_funds: float = 0.0
-        self.total_available_funds: float = initial_starting_funds
         self.previous_reserve: float = 0.0
 
         # PLF Pool Constants
@@ -90,17 +89,17 @@ class PLFPool:
 
     @property
     def utilization_ratio(self) -> float:
-        if self.total_interest_tokens == 0:
+        if self.total_supply_tokens == 0:
             return 0
-        return self.total_borrow_tokens / self.total_interest_tokens
+        return self.total_borrow_tokens / self.total_supply_tokens
 
     @property
-    def total_interest_tokens(self) -> float:
-        return sum(self.user_interest_token.values())
+    def total_supply_tokens(self) -> float:
+        return sum([sum(v) for v in self.user_supply_token.values()])
 
     @property
     def total_borrow_tokens(self) -> float:
-        return sum(self.user_borrow_token.values())
+        return sum([sum(v) for v in self.user_borrow_token.values()])
 
     @property
     def supply_interest_rate(self) -> float:
@@ -122,7 +121,7 @@ class PLFPool:
 
     @property
     def reserve(self) -> float:
-        return self.total_borrow_tokens + self.total_available_funds - self.total_interest_tokens
+        return self.total_supply_tokens - self.total_borrow_tokens
 
     @property
     def reward(self) -> float:
@@ -132,6 +131,9 @@ class PLFPool:
     def _get_daily_interest(amount: float) -> float:
         return (1 + amount) ** (1 / 365)
 
+    def set_agents(self, agent_list: List[AttentionAgent]):
+        self.agent_list = agent_list
+
     def get_profit(self) -> float:
         return self.reward
 
@@ -140,8 +142,7 @@ class PLFPool:
 
     def get_state(self) -> torch.Tensor:
         return torch.Tensor([
-            self.total_available_funds,  # Total Available Funds
-            self.total_interest_tokens,  # Supply Token
+            self.total_supply_tokens,    # Supply Token
             self.total_borrow_tokens,    # Borrow Token
             self.reserve,                # Net Position
             self.utilization_ratio,      # Utilization Ratio
@@ -186,65 +187,91 @@ class PLFPool:
         :param action:
         :return:
         """
-        getattr(self, "do_" + PLF_USER_ACTION_MAPPING[action])()
+        assert self.agent_list is not None, "Agent list was not initialized properly!"
+        getattr(self, "do_" + PLF_USER_ACTION_MAPPING[action])(str(agent_nr))
 
-    def do_no_action(self):
-        pass
+    def do_no_action(self, i: str):
+        print("Agent {} didn't perform an action on pool {}".format(i, self.token_name))
 
-    def do_deposit(self):
+    def do_deposit(self, i: str) -> None:
         """
-        Function
-        1) deducts money from agents balance
-        2) adds it to the pools balance
-        3) mints supply interest token
+        TODO: If agent overspends -> negative reward/punishment
+        :param i: Agent idx
+        """
+        # 1) Check whether agent has enough funds for the deposit
+        agent_balance = self.agent_list[int(i)].get_balance(self.token_name)
+        if agent_balance < PLF_STEP_SIZE:
+            print("Agent {} tried to deposit {} into {}, but didn't have enough funds ({})".format(i, PLF_STEP_SIZE, self.token_name, agent_balance))
+            # TODO: Reward -> negative reward
+            return
+        # 2) Deduct funds from agents balance
+        self.agent_list[int(i)].sub_balance(token_name=self.token_name, new_balance=PLF_STEP_SIZE)
+        # 3) Add the funds to the pool
+        if self.user_supply_token.get(i) is None:
+            self.user_supply_token[i] = list()
+        self.user_supply_token[i].append(PLF_STEP_SIZE)
+        print("Agent {} has deposited {} into {}".format(i, PLF_STEP_SIZE, self.token_name))
 
-        TODO:
-        If agent overspends -> negative reward/punishment
+    def do_withdraw(self, i: str):
+        """
+        TODO: If agent withdraws too much funds -> negative reward/punishment
+        :param i: Agent idx
         :return:
         """
-        print("Agent deposited")
+        # 1) Check whether the user has deposited anything into the pool
+        if self.user_supply_token.get(i) is None:
+            print("Agent {} tried to withdraw {} into {}, but didn't have enough funds".format(i, PLF_STEP_SIZE, self.token_name))
+            # TODO: Reward -> negative reward
+            return
+        # 2) Remove the funds from the pool
+        withdrawal_amount = self.user_supply_token[i].pop()
+        # 3) Add the funds to the agents balance
+        self.agent_list[int(i)].add_balance(token_name=self.token_name, new_balance=withdrawal_amount)
+        print("Agent {} has withdrawn {} from {}}".format(i, PLF_STEP_SIZE, self.token_name))
 
-    def do_withdraw(self):
-        """
-        1) adds money to agent's balance
-        2) removes money from the pool's balance
-        3) supply interest tokens are burned
-
-        TODO:
-        If agent overspends -> negative reward/punishment
-        :return:
-        """
-        print("Agent withdrew")
-
-    def do_borrow(self):
+    def do_borrow(self, i: str):
         """
         1) removes money from the pool's balance
         2) add money to the user's balance
         3) mints borrow interest tokens
+
+        :param i: Agent idx
         :return:
         """
+        # 1) Check whether the user has deposited anything into the pool
+        if self.user_supply_token.get(i) is None:
+            print("Agent {} tried to withdraw {} into {}, but didn't have enough funds".format(i, PLF_STEP_SIZE,
+                                                                                               self.token_name))
+            # TODO: Reward -> negative reward
+            return
+        # 2) Remove the funds from the pool
+        withdrawal_amount = self.user_supply_token[i].pop()
+        # 3) Add the funds to the agents balance
+        self.agent_list[int(i)].add_balance(token_name=self.token_name, new_balance=withdrawal_amount)
+        print("Agent {} has borrowed {} from {}}".format(i, PLF_STEP_SIZE, self.token_name))
 
-        print("Agent borrowed")
-
-
-    def do_repay(self):
+    def do_repay(self, i: int):
         """
         1) adds money to the pool's balance
         2) removes money from the user's balance
         3) burns borrow interest tokens
+
+        :param i: Agent idx
         :return:
         """
-        print("Agent repaid")
+        print("Agent {} has repaid {} to {}}".format(i, PLF_STEP_SIZE, self.token_name))
 
-    def do_liquidate(self):
+    def do_liquidate(self, i: int):
         """
         In the simplified training environment of Xu Et al., the
         liquidation of a borrow position updates the pool states
         just like a repayment does.
+
+        :param i: Agent idx
         :return:
         """
         print("Agent liquidated")
-        self.do_repay()
+        self.do_repay(i)
 
     def governance_step(self, agent_nr: int, action: int) -> None:
         """
@@ -270,19 +297,20 @@ class PLFPool:
         :return: None
         """
         # Accrue interest tokens
-        for user_name, token_amount in self.user_interest_token.items():
-            self.user_interest_token[user_name] *= self._get_daily_interest(self.supply_interest_rate)
+        for user_name, token_amount in self.user_supply_token.items():
+            for i in range(len(self.user_supply_token[user_name])):
+                self.user_supply_token[user_name][i] *= self._get_daily_interest(self.supply_interest_rate)
         # Accrue borrow tokens
         for user_name, token_amount in self.user_borrow_token.items():
-            self.user_borrow_token[user_name] *= self._get_daily_interest(self.borrow_interest_rate)
-        # TODO: These tokens belong to the users -> They should be updated in their wallets as well
+            for i in range(len(self.user_borrow_token[user_name])):
+                self.user_borrow_token[user_name][i] *= self._get_daily_interest(self.borrow_interest_rate)
 
     def __repr__(self):
         return (
             "PLFPool(" +
             f"'{self.token_name}', " +
             f"Collateral Factor: {self.collateral_factor:.2f}, "+
-            f"Total Borrow: {self.total_borrowed_funds:.4f}, " +
-            f"Total Available Funds: {self.total_available_funds:.4f}" +
+            f"Total Borrow: {self.total_borrow_tokens:.4f}, " +
+            f"Total Available Funds: {self.total_supply_tokens:.4f}" +
             ")"
         )

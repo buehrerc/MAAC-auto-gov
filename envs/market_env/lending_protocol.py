@@ -1,14 +1,15 @@
-import gym
-import numpy as np
 import torch
+import numpy as np
+from typing import Dict, List, Optional, Union, Tuple
 
+import gym
+from gym import spaces
+
+from utils.agents import AttentionAgent
 from envs.market_env.plf_pool import PLFPool
 from envs.market_env.market import Market
 from envs.market_env.utils import combine_observation_space
 from gym.core import RenderFrame, ActType, ObsType
-from gym import spaces
-from typing import Dict, List, Optional, Union, Tuple
-
 from envs.market_env.constants import (
     CONFIG_LENDING_PROTOCOL,
     CONFIG_PLF_POOL,
@@ -31,6 +32,7 @@ class LendingProtocol(gym.Env):
         self.config = config
         self.plf_pools: List[PLFPool] = list()
         self.agent_mask: List[str] = list()
+        self.agent_list = None
         self.observation_space = spaces.Space()
         self.action_space = spaces.Space()  # TODO: implement/initialize the action_space
         self.agent_action_space = list()
@@ -49,6 +51,7 @@ class LendingProtocol(gym.Env):
                 self.config[CONFIG_LENDING_PROTOCOL][CONFIG_PLF_POOL]
             )
         )
+        self.set_agents(self.agent_list)
         self.observation_space = combine_observation_space(self.plf_pools)
         self.action_space, self.agent_action_space = self._get_action_space(self.plf_pools, self.agent_mask)
         pool_return = [plf_pool.step_result() for plf_pool in self.plf_pools]
@@ -114,6 +117,10 @@ class LendingProtocol(gym.Env):
 
     def render(self) -> Optional[Union[RenderFrame, List[RenderFrame]]]:
         pass
+
+    def set_agents(self, agent_list: List[AttentionAgent]):
+        self.agent_list = agent_list
+        list(map(lambda pool: pool.set_agents(agent_list), self.plf_pools))
 
     def __repr__(self):
         return "LendingProtocol(" + repr(self.plf_pools) + ")"

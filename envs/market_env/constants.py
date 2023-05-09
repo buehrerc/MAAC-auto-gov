@@ -14,8 +14,8 @@ CONFIG_AGENT_TYPE_USER = "user"
 # 2) CONSTANTS
 # 2.1) PLFPool Constants
 PLF_OBSERVATION_SPACE = spaces.Box(
-    low=np.array([0, 0, 0, -np.inf, 0, 0, 0, 0]),
-    high=np.array([np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf]),
+    low=np.array([0, 0, -np.inf, 0, 0, 0, 0]),
+    high=np.array([np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf]),
     dtype=np.float32
 )
 PLF_GOVERNANCE_ACTION_MAPPING = {
