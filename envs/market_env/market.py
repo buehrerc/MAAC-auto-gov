@@ -65,7 +65,10 @@ class Market(gym.Env):
         return dict([(name, token.get_price()) for name, token in self.tokens.items()])
 
     def get_token(self, name: str):
-        return self.tokens[name]
+        try:
+            return self.tokens[name]
+        except KeyError:
+            raise KeyError("Token {} does not exist, thus no PLFPool could be initialized".format(name))
 
     def render(self) -> Optional[Union[RenderFrame, List[RenderFrame]]]:
         pass

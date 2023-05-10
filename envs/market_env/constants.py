@@ -19,12 +19,10 @@ PLF_OBSERVATION_SPACE = spaces.Box(
     dtype=np.float32
 )
 PLF_GOVERNANCE_ACTION_MAPPING = {
-    0: 0,
     1: -1,
     2: 1,
 }
 PLF_USER_ACTION_MAPPING = {
-    0: "no_action",
     1: "deposit",
     2: "withdraw",
     3: "borrow",
@@ -32,8 +30,8 @@ PLF_USER_ACTION_MAPPING = {
     5: "liquidate",
 }
 PLF_ACTION_SPACE = {
-    CONFIG_AGENT_TYPE_GOVERNANCE: spaces.Discrete(len(PLF_GOVERNANCE_ACTION_MAPPING)),
-    CONFIG_AGENT_TYPE_USER: spaces.Discrete(len(PLF_USER_ACTION_MAPPING))
+    CONFIG_AGENT_TYPE_GOVERNANCE: len(PLF_GOVERNANCE_ACTION_MAPPING),
+    CONFIG_AGENT_TYPE_USER: len(PLF_USER_ACTION_MAPPING)
 }
 PLF_REWARD_RANGE = [-np.inf, np.inf]
 INITIATOR = "initiator"

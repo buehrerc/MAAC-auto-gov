@@ -10,6 +10,11 @@
         "name": "anotherToken",
         "price": 69.0,
         "asset_volatility": 0.2
+      },
+      {
+        "name": "yetAnotherToken",
+        "price": 100.0,
+        "asset_volatility": 0.05
       }
     ]
   },
@@ -24,6 +29,9 @@
         "token_name": "anotherToken",
         "initial_starting_funds": 100,
         "collateral_factor": 0.85
+      },
+      {
+        "token_name": "yetAnotherToken"
       }
     ]
   },

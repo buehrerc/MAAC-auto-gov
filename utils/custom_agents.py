@@ -38,6 +38,9 @@ class UserAgent(AttentionAgent):
     def sub_balance(self, token_name: str, amount: float):
         self.balance[token_name] -= amount
 
+    def __repr__(self):
+        return f"UserAgent('{self.name}', balance: {self.balance})"
+
 
 class GovernanceAgent(AttentionAgent):
     def __init__(
@@ -53,3 +56,6 @@ class GovernanceAgent(AttentionAgent):
         super().__init__(num_in_pol=action_space, num_out_pol=observation_space,
                          hidden_dim=hidden_dim, lr=lr, onehot_dim=onehot_dim)
         self.name = name
+
+    def __repr__(self):
+        return f"GovernanceAgent('{self.name}')"
