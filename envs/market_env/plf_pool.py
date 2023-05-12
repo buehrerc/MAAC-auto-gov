@@ -40,8 +40,8 @@ class PLFPool:
         # Pool Parameters
         self.collateral_factor: float = collateral_factor
         self.col_factor_change_rate: float = col_factor_change_rate
-        self.supply_token: Dict[str, List] = {INITIATOR: [initial_starting_funds]}
-        self.borrow_token: Dict[str, List] = dict()
+        self.supply_token: Dict[str, float] = {INITIATOR: initial_starting_funds}
+        self.borrow_token: Dict[str, float] = dict()
 
         # Reward Parameters
         self.previous_reserve: float = 0.0
@@ -55,11 +55,11 @@ class PLFPool:
 
     @property
     def total_supply_token(self) -> float:
-        return sum([sum(v) for v in self.supply_token.values()])
+        return sum(self.supply_token.values())
 
     @property
     def total_borrow_token(self) -> float:
-        return sum([sum(v) for v in self.borrow_token.values()])
+        return sum(self.borrow_token.values())
 
     @property
     def utilization_ratio(self) -> float:
@@ -104,6 +104,21 @@ class PLFPool:
             self.borrow_interest_rate   # Borrow Interest Rate
         ])
 
+# =====================================================================================================================
+#   POOL GETTER
+# =====================================================================================================================
+    def get_token_price(self) -> float:
+        return self.token.get_price()
+
+    def get_token_name(self) -> str:
+        return self.token_name
+
+    def get_collateral_factor(self) -> float:
+        return self.collateral_factor
+
+# =====================================================================================================================
+#   UPDATE POOL
+# =====================================================================================================================
     def step(self) -> ObsType:
         """
         Function is being used to update the pool internal parameters
@@ -118,61 +133,47 @@ class PLFPool:
         :return: None
         """
         # Accrue interest tokens
-        for user_name, token_amount in self.supply_token.items():
-            for i in range(len(self.supply_token[user_name])):
-                self.supply_token[user_name][i] *= self._get_daily_interest(self.supply_interest_rate)
+        for supply_key in self.supply_token.keys():
+            self.supply_token[supply_key] *= self._get_daily_interest(self.supply_interest_rate)
         # Accrue borrow tokens
-        for user_name, token_amount in self.borrow_token.items():
-            for i in range(len(self.borrow_token[user_name])):
-                self.borrow_token[user_name][i] *= self._get_daily_interest(self.borrow_interest_rate)
+        for borrow_key in self.borrow_token.keys():
+            self.borrow_token[borrow_key] *= self._get_daily_interest(self.borrow_interest_rate)
 
-    def update_collateral_factor(self, direction: int):
+# =====================================================================================================================
+#   POOL ACTIONS
+# =====================================================================================================================
+    def update_collateral_factor(self, direction: int) -> (float, bool):
         new_col_fac = self.collateral_factor + direction * self.col_factor_change_rate
         if not 0 < new_col_fac < 1:
             # TODO: Punish actor for this action by giving him a penalty!
             # And do not update the collateral_factor
-            pass
+            return 0.0, False
         self.collateral_factor = new_col_fac
+        return 0.0, True
 
-    def do_deposit(self, agent_id: int, agent: UserAgent, amount: float) -> None:
-        """
-        TODO: If agent overspends -> negative reward/punishment
-        :param agent_id: Agent's ID
-        :param agent: Agent who wants to deposit funds
-        :param amount: Amount the agent wants to deposit
-        """
-        # 1) Check whether agent has enough funds for the deposit
-        agent_balance = agent.get_balance(self.token_name)
-        if agent_balance < amount:
-            logging.info("Agent {} tried to deposit {} into {}, but didn't have enough funds ({})".format(agent_id, amount, self.token_name, agent_balance))
-            # TODO: Reward -> negative reward
-            return
-        # 2) Deduct funds from agents balance
-        agent.sub_balance(token_name=self.token_name, amount=amount)
-        # 3) Add the funds to the pool
-        if self.supply_token.get(str(agent_id)) is None:
-            self.supply_token[str(agent_id)] = list()
-        self.supply_token[str(agent_id)].append(amount)
-        logging.info("Agent {} has deposited {} into {}".format(agent_id, amount, self.token_name))
+    def add_supply(self, key: str, amount: float) -> None:
+        logging.debug(f"Supply of {amount} was added to pool '{self.token_name}'")
+        self.supply_token[key] = amount
 
-    def do_withdraw(self, agent_id: int, agent: UserAgent, amount: float) -> None:
-        """
-        Function removes the oldest
-        TODO: If agent withdraws too much funds -> negative reward/punishment
-        :param agent_id: Agent's ID
-        :param agent: Agent who wants to withdraw funds
-        :param amount: Amount the agent wants to withdraw
-        """
-        # 1) Check whether the user has deposited anything into the pool
-        if self.supply_token.get(str(agent_id)) is None or len(self.supply_token.get(str(agent_id))) == 0:
-            logging.info("Agent {} tried to withdraw {} from {}, but didn't deposit enough or didn't deposit at all.".format(agent_id, amount, self.token_name))
-            # TODO: Reward -> negative reward
-            return
-        # 2) Remove the funds from the pool
-        withdrawal_amount = self.supply_token[str(agent_id)].pop()
-        # 3) Add the funds to the agents balance
-        agent.add_balance(token_name=self.token_name, amount=withdrawal_amount)
-        logging.info("Agent {} has withdrawn {} from {}}".format(agent_id, withdrawal_amount, self.token_name))
+    def remove_supply(self, key: str) -> float:
+        amount = self.supply_token.pop(key)
+        logging.debug(f"Supply of {amount} was removed from pool '{self.token_name}'")
+        return amount
+
+    def get_supply(self, key: str) -> float:
+        return self.supply_token.get(key)
+
+    def start_borrow(self, key: str, amount: float) -> None:
+        logging.debug(f"Borrow of {amount} was taken from pool '{self.token_name}'")
+        self.borrow_token[key] = amount
+
+    def return_borrow(self, key: str) -> float:
+        amount = self.borrow_token.pop(key)
+        logging.debug(f"Borrow of {amount} was returned to pool '{self.token_name}'")
+        return amount
+
+    def get_borrow(self, key: str) -> float:
+        return self.borrow_token.get(key)
 
     def __repr__(self):
         return (

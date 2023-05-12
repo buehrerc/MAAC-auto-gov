@@ -27,10 +27,15 @@ def training(config):
     env.set_agents(agents)
     env.reset()
 
-    for i in range(10):
-        logging.info(f"Start Round {i} ===============================================================================")
-        state, reward, _, _, _ = env.step(action=env.action_space.sample())
-        logging.debug(f"Environment:: environment_state={state}, reward={reward}")
+    env.step(action=(0, 1))     # Supply
+    env.step(action=(0, 2))     # Withdraw
+    env.step(action=(0, 3))     # Borrow (0, 1)
+    env.step(action=(0, 12))     # Repay (0, 1)
+
+    # for i in range(10):
+    #     logging.info(f"Start Round {i} ===============================================================================")
+    #     state, reward, _, _, _ = env.step(action=env.action_space.sample())
+    #     logging.debug(f"Environment:: environment_state={state}, reward={reward}")
 
     logging.info("Finished")
 

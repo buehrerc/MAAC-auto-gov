@@ -40,7 +40,16 @@ PLF_STEP_SIZE = 1000
 PLF_RB_FACTOR = 20
 PLF_SPREAD = 0.2
 
-# 2.2) Token Constants
+# 2.2) Lending Protocol Constants
+LP_BORROW_SAFETY_MARGIN = 0.15
+LP_DEPOSIT_AMOUNT = 1000
+LP_OBSERVATION_SPACE = spaces.Box(
+    low=np.array([-1]),
+    high=np.array([np.inf]),
+    dtype=np.float32
+)
+
+# 2.3) Token Constants
 TOKEN_OBSERVATION_SPACE = spaces.Box(
     low=np.array([0, 0, 0, 0]),
     high=np.array([np.inf, np.inf, np.inf, np.inf]),

@@ -11,7 +11,7 @@ from envs.market_env.constants import (
 )
 
 
-def combine_observation_space(obj_list: List):
+def combine_observation_space(obj_list: List[gym.Env]):
     observation_spaces = [o.observation_space for o in obj_list]
     return spaces.Box(
         low=np.concatenate([o.low for o in observation_spaces]),

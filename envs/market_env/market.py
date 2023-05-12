@@ -64,7 +64,9 @@ class Market(gym.Env):
     def get_prices(self) -> Dict[str, float]:
         return dict([(name, token.get_price()) for name, token in self.tokens.items()])
 
-    def get_token(self, name: str):
+    def get_token(self, name: str = None):
+        if name is None:
+            return self.tokens
         try:
             return self.tokens[name]
         except KeyError:
@@ -108,10 +110,10 @@ class Token:
         self.price_history = list()
         self.rng = np.random.RandomState(seed)
 
-    def get_name(self):
+    def get_name(self) -> str:
         return self.name
 
-    def get_price(self):
+    def get_price(self) -> float:
         return self.price
 
     def get_state(self) -> torch.Tensor:
