@@ -2,8 +2,7 @@ import logging
 import torch
 import numpy as np
 from gym.core import ObsType
-from typing import Dict, List
-from utils.custom_agents import UserAgent
+from typing import Dict
 from envs.market_env.market import Market
 from envs.market_env.constants import (
     INITIATOR,
@@ -11,7 +10,6 @@ from envs.market_env.constants import (
     PLF_RB_FACTOR,
     PLF_SPREAD,
     PLF_OBSERVATION_SPACE,
-    PLF_ACTION_SPACE
 )
 
 
@@ -30,7 +28,6 @@ class PLFPool:
         assert 0 < collateral_factor < 1, "Collateral Factor must be between 0 and 1"
         # Gym Atributes
         self.observation_space = PLF_OBSERVATION_SPACE
-        self.action_space = PLF_ACTION_SPACE
 
         # General Properties
         self.token_name = token_name

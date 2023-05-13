@@ -42,6 +42,7 @@ PLF_SPREAD = 0.2
 
 # 2.2) Lending Protocol Constants
 LP_BORROW_SAFETY_MARGIN = 0.15
+LP_LIQUIDATION_PENALTY = 0.1
 LP_DEPOSIT_AMOUNT = 1000
 LP_OBSERVATION_SPACE = spaces.Box(
     low=np.array([-1]),

@@ -1,11 +1,11 @@
 import logging
 import uuid
-import pandas as pd
 import gym
 from gym import spaces
 from gym.core import ObsType, RenderFrame
 from typing import Dict, List, Tuple, Optional, Union
 import torch
+import numpy as np
 
 from envs.market_env.market import Market
 from envs.market_env.plf_pool import PLFPool
@@ -42,8 +42,9 @@ class LendingProtocol(gym.Env):
         self.config = config
 
         # Protocol Book-keeping
-        self.supply_record: Dict[Tuple, List] = dict()
-        self.borrow_record: Dict[Tuple, List] = dict()
+        self.supply_record: Dict[Tuple, List] = dict()  # dict_keys: (agent_id, pool_id)
+        self.borrow_record: Dict[Tuple, List] = dict()  # dict_keys: (agent_id, loan_collateral, loan_hash)
+        self.worst_loans: Dict[int, Tuple] = dict()   # dict_keys: pool_id, dict_values: (borrow_keys, loan_hash, health_factor)
         self.reward: torch.Tensor = torch.Tensor()
 
         # Initialize additional attributes
@@ -89,13 +90,10 @@ class LendingProtocol(gym.Env):
         # 1) Update all plf_pools based on the actions of the agents
         pool_states = torch.cat([pool.step() for pool in self.plf_pools])
 
-        # 2) Compute health factors of the loans and get the lowest
-        borrow_record_unpacked = [(key[1], key[2], i) for key, item in self.borrow_record.items() for i in item]
-        min_health_factor = -torch.inf
-        if len(borrow_record_unpacked) > 0:
-            min_health_factor = min(list(map(lambda args: self._get_health_factor(*args), borrow_record_unpacked)))
-
-        # 2) Reset the reward
+        # 2) Compute the lowest health factor for each plf_pool
+        self.worst_loans = {i: self._update_health_factor(i) for i in range(len(self.plf_pools))}
+        # TODO: add lowest health factors to the state
+        # 3) Reset the reward
         last_reward = self.reward
         self.reward = torch.zeros(len(self.agent_mask))
 
@@ -119,6 +117,18 @@ class LendingProtocol(gym.Env):
         collateral_price = self.plf_pools[pool_collateral].get_token_price()
         collateral_factor = self.plf_pools[pool_loan].get_collateral_factor()
         return (collateral_amount * collateral_price * collateral_factor) / (loan_amount * loan_price)
+
+    def _update_health_factor(self, idx):
+        loan_in_pool = list(filter(lambda x: x[2] == idx, self.borrow_record.keys()))
+        if len(loan_in_pool) == 0:
+            return None
+        # Compute health_factor for all loans
+        unpacked_pool_loans = [(*k, loans) for k in loan_in_pool for loans in self.borrow_record[k]]
+        if len(unpacked_pool_loans) == 0:
+            return None
+        health_factors = list(map(lambda x: self._get_health_factor(*x[1:]), unpacked_pool_loans))
+        min_hf_idx = np.argmin(health_factors)
+        return unpacked_pool_loans[min_hf_idx][:3], unpacked_pool_loans[min_hf_idx][3], health_factors[min_hf_idx]
 
     def render(self) -> Optional[Union[RenderFrame, List[RenderFrame]]]:
         pass
@@ -256,7 +266,25 @@ class LendingProtocol(gym.Env):
         return 0, True
 
     def liquidate(self, agent_id: int, pool_id: int) -> (float, bool):
-        pass
+        # 1) Check whether there are any loans, which could be liquidated
+        pool_loans_keys = list(filter(lambda x: x[2] == pool_id, self.borrow_record.keys()))
+        if len(pool_loans_keys) == 0:
+            logging.info(f"Agent {agent_id} tried to liquidate pool {pool_id}, but there is no loan in this pool.")
+
+        # 2) Check whether the loans have unhealthy loans
+        if self.worst_loans.get(pool_id) is None:
+            return 0, False
+
+        borrow_key, borrow_hash, health_factor = self.worst_loans.get(pool_id)
+        if health_factor > 1:
+            logging.info(
+                f"Agent {agent_id} tried to liquidate a loan from pool {pool_id},"
+                f" however the loan has a good health factor: {health_factor}"
+            )
+            return 0, False
+        # 3) Liquidate the loan accordingly
+
+
 
     def _remove_agent_funds(self, agent_id: int, pool_to: int, amount: float):
         pool_token = self.plf_pools[pool_to].get_token_name()

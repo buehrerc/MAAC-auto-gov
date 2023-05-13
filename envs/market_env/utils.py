@@ -6,8 +6,6 @@ from gym import spaces
 from envs.market_env.constants import (
     CONFIG_AGENT_TYPE_GOVERNANCE,
     CONFIG_AGENT_TYPE_USER,
-    PLF_GOVERNANCE_ACTION_MAPPING,
-    PLF_USER_ACTION_MAPPING
 )
 
 
@@ -55,9 +53,15 @@ def encode_user_action(num_plf_pools: int) -> Dict[int, Tuple]:
         0: no action
         1: deposit funds into 1st pool
         2: withdraw funds from 1st pool
-        3: borrow funds from 1st pool and deposit funds in 2nd pool
-        4: borrow funds from 1st pool and deposit funds in 3rd pool
+        3: liquidate 1st pool
+        4: borrow funds from 1st pool and deposit funds in 2nd pool
+        5: borrow funds from 1st pool and deposit funds in 3rd pool
         etc.
+        i: repay funds to 1st pool and receive collateral from 2nd pool
+        i+1: repay funds to 1st pool and receive collateral from 3rd pool
+        etc.
+
+    > ACTION SPACE: 1 + num_plf_pools * (3 + 2 * (num_plf_pools - 1))
 
     """
     encoding = dict()
@@ -66,12 +70,12 @@ def encode_user_action(num_plf_pools: int) -> Dict[int, Tuple]:
     for n in range(num_plf_pools):
         encoding[i] = (1, None, n)      # Deposit
         encoding[i+1] = (2, None, n)    # Withdraw
-        i += 2
+        encoding[i+2] = (5, None, n)    # Liquidate
+        i += 3
         for m in range(num_plf_pools):
             if m == n:
                 continue
             encoding[i] = (3, n, m)     # Borrow
             encoding[i+1] = (4, n, m)   # Repay
-            encoding[i+2] = (5, n, m)   # Liquidate
-            i += 3
+            i += 2
     return encoding
