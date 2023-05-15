@@ -147,4 +147,5 @@ class MultiAgentEnv(gym.Env):
         return state
 
     def set_agents(self, agent_list: List[AttentionAgent]) -> None:
-        self.lending_protocol.set_agent(agent_list)
+        self.agent_list = agent_list
+        self.lending_protocol.set_agent(self.agent_list)

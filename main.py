@@ -3,6 +3,7 @@ import logging
 import json
 import argparse
 import torch
+import numpy as np
 from torch.autograd import Variable
 from gym.spaces import Box, Discrete
 from pathlib import Path
@@ -25,7 +26,7 @@ def init_logger(config):
 
 
 def init_params(config):
-    model_dir = Path('./models') / config.env_id / config.model_name
+    model_dir = Path('./models') / config.model_name
     if not model_dir.exists():
         run_num = 1
     else:
@@ -77,7 +78,7 @@ def train(
 
         for et_i in range(config.episode_length):
             # rearrange observations to be per agent, and convert to torch Variable
-            torch_obs = [Variable(torch.Tensor(np.vstack(obs[:, i])),
+            torch_obs = [Variable(torch.Tensor(np.vstack(obs)),
                                   requires_grad=False)
                          for i in range(model.nagents)]
             # get actions as torch Variables
@@ -121,14 +122,16 @@ def run(env_config, config):
     logger, run_dir, log_dir = init_params(config)
     env = init_env(env_config)
 
-    model = CustomAttentionSAC.init_from_custom(env,
-                                                tau=config.tau,
-                                                pi_lr=config.pi_lr,
-                                                q_lr=config.q_lr,
-                                                gamma=config.gamma,
-                                                critic_hidden_dim=config.critic_hidden_dim,
-                                                attend_heads=config.attend_heads,
-                                                reward_scale=config.reward_scale)
+    model = CustomAttentionSAC(
+        env=env,
+        tau=config.tau,
+        pi_lr=config.pi_lr,
+        q_lr=config.q_lr,
+        gamma=config.gamma,
+        critic_hidden_dim=config.critic_hidden_dim,
+        attend_heads=config.attend_heads,
+        reward_scale=config.reward_scale
+    )
     replay_buffer = ReplayBuffer(config.buffer_length, model.nagents,
                                  [env.observation_space.shape[0]] * len(env.action_space),
                                  [acsp.shape[0] if isinstance(acsp, Box) else acsp.n
@@ -148,8 +151,7 @@ def dev(env_config):
 
     actions = [(0, 1), (0, 2), (0, 4), (0, 12), (0, 4), (0, 3)]
 
-    # for i, a in enumerate(100):
-    for i in range(100):
+    for i, a in enumerate(actions):
         logging.info(f"Start Round {i} ===============================================================================")
         state, reward, _, _, _ = env.step(action=env.action_space.sample())
         # state, reward, _, _, _ = env.step(action=a)
@@ -187,4 +189,3 @@ if __name__ == '__main__':
     fs = open(config_.config)
     env_config_ = json.load(fs)
     run(env_config_, config_)
-    # dev(env_config_)
