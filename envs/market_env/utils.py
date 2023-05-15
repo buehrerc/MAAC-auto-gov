@@ -9,8 +9,10 @@ from envs.market_env.constants import (
 )
 
 
-def combine_observation_space(obj_list: List[gym.Env]):
+def combine_observation_space(obj_list: List[gym.Env], obs_spaces: List[spaces.Space] = None):
     observation_spaces = [o.observation_space for o in obj_list]
+    if obs_spaces is not None and len(obs_spaces) > 0:
+        observation_spaces.extend(obs_spaces)
     return spaces.Box(
         low=np.concatenate([o.low for o in observation_spaces]),
         high=np.concatenate([o.high for o in observation_spaces])

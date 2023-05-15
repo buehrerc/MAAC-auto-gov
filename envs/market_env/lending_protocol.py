@@ -21,6 +21,9 @@ from envs.market_env.constants import (
     LP_BORROW_SAFETY_MARGIN,
     LP_DEPOSIT_AMOUNT,
     LP_LIQUIDATION_PENALTY,
+    LP_OBSERVATION_SPACE,
+    LP_DEFAULT_HEALTH_FACTOR,
+    ACTION_USER_DEPOSIT, ACTION_USER_WITHDRAW, ACTION_USER_BORROW, ACTION_USER_REPAY, ACTION_USER_LIQUIDATE,
 )
 
 
@@ -75,12 +78,26 @@ class LendingProtocol(gym.Env):
             )
         )
         # Based on the reinitialized plf pools -> compute observation and action space
-        self.observation_space = combine_observation_space(self.plf_pools)
+        additional_observation_spaces = [LP_OBSERVATION_SPACE] * len(self.plf_pools)
+        self.observation_space = combine_observation_space(self.plf_pools, additional_observation_spaces)
+
         # Reset the reward
         self.reward = torch.zeros(len(self.agent_mask))
+
+        # Reset all the records
+        self.borrow_record = dict()
+        self.supply_record = dict()
+        self.worst_loans = {i: self._update_health_factor(i) for i in range(len(self.plf_pools))}
+
         # Return the state of the pool alongside the remaining return values
+        state = [pool.get_state() for pool in self.plf_pools]
+        state.extend([
+            torch.Tensor([v[2]]) if v is not None else torch.Tensor([LP_DEFAULT_HEALTH_FACTOR])
+            for v in self.worst_loans.values()
+        ])
+
         return (
-            torch.cat([pool.get_state() for pool in self.plf_pools]),
+            torch.cat(state),
             self.reward,
             False,
             False,
@@ -89,17 +106,22 @@ class LendingProtocol(gym.Env):
 
     def step(self, action=None) -> Tuple[ObsType, torch.Tensor, bool, bool, dict]:
         # 1) Update all plf_pools based on the actions of the agents
-        pool_states = torch.cat([pool.step() for pool in self.plf_pools])
+        pool_states = [pool.step() for pool in self.plf_pools]
 
         # 2) Compute the lowest health factor for each plf_pool
         self.worst_loans = {i: self._update_health_factor(i) for i in range(len(self.plf_pools))}
-        # TODO: add lowest health factors to the state
+        # Append them to the state
+        pool_states.extend([
+            torch.Tensor([v[2]]) if v is not None else torch.Tensor([LP_DEFAULT_HEALTH_FACTOR])
+            for v in self.worst_loans.values()
+        ])
+
         # 3) Reset the reward
         last_reward = self.reward
         self.reward = torch.zeros(len(self.agent_mask))
 
         return (
-            pool_states,    # Observation State
+            torch.cat(pool_states),    # Observation State
             last_reward,    # Reward
             False,          # Terminated
             False,          # Truncated
@@ -158,6 +180,8 @@ class LendingProtocol(gym.Env):
         # 3) Add the funds to the pool
         self.plf_pools[pool_to].add_supply(key=deposit_hash, amount=amount)
 
+        # 4) Assign reward
+        # TODO: Assign reward
         return 0, True
 
     def withdraw(self, agent_id: int, pool_from: int, amount: float) -> (float, bool):
@@ -197,10 +221,8 @@ class LendingProtocol(gym.Env):
         deposit_amount = LP_DEPOSIT_AMOUNT
         deposit_price = self.plf_pools[pool_collateral].get_token_price()
         borrow_price = self.plf_pools[pool_loan].get_token_price()
-        # TODO: For test reasons, I have manipulated L_t
-        # L_t = self.plf_pools[pool_loan].get_collateral_factor() - LP_BORROW_SAFETY_MARGIN
-        L_t = self.plf_pools[pool_loan].get_collateral_factor() + 0.05
-        borrow_amount = (deposit_amount * deposit_price * L_t) / borrow_price
+        l_t = self.plf_pools[pool_loan].get_collateral_factor() - LP_BORROW_SAFETY_MARGIN
+        borrow_amount = (deposit_amount * deposit_price * l_t) / borrow_price
 
         # 2) Deduct the collateral from the agent first
         reward, success = self._remove_agent_funds(agent_id, pool_collateral, amount)

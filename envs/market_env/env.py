@@ -53,7 +53,7 @@ class MultiAgentEnv(gym.Env):
         :return:
         """
         # Set the action of each agent first:
-        self._set_action(action)
+        initial_reward = self._set_action(action)
 
         # Update the whole environment based on the actions of the agents
         lp_state, reward, terminated, truncated, lp_logs = self.lending_protocol.step(action)
@@ -62,7 +62,7 @@ class MultiAgentEnv(gym.Env):
         state = torch.cat([lp_state, market_state])
         return state, reward, terminated, truncated, lp_logs
 
-    def _set_action(self, action_list: torch.Tensor) -> None:
+    def _set_action(self, action_list: torch.Tensor) -> List:
         action_returns = list()
         for agent_id, action in enumerate(action_list):
             if self.agent_mask[agent_id] == CONFIG_AGENT_TYPE_GOVERNANCE:
@@ -71,6 +71,7 @@ class MultiAgentEnv(gym.Env):
                 action_returns.append(self._set_user_action(agent_id, action))
             else:
                 raise KeyError("Agent type {} was not found".format(self.agent_mask[agent_id]))
+        return action_returns
 
     def _set_governance_action(self, agent_id: int, action: torch.Tensor) -> (float, bool):
         """
