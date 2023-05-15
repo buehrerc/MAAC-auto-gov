@@ -1,3 +1,5 @@
+import logging
+
 import torch
 from typing import Dict
 from utils.agents import AttentionAgent
@@ -62,11 +64,14 @@ class UserAgent(CustomAgent):
         return self.balance[token_name]
 
     def add_balance(self, token_name: str, amount: float) -> None:
+        logging.debug(f"Agent {self.name} has received {amount} of {token_name}")
         if token_name not in self.balance.keys():
             self.balance[token_name] = 0
         self.balance[token_name] += amount
 
     def sub_balance(self, token_name: str, amount: float) -> None:
+        logging.debug(f"Agent {self.name} has paid {amount} of {token_name}")
+        assert self.balance.get(token_name) is not None and self.balance[token_name] >= amount, f"Agent {self.name} does not have enough funds"
         self.balance[token_name] -= amount
 
     def reward(self) -> float:

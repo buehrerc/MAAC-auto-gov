@@ -20,6 +20,7 @@ from envs.market_env.constants import (
     CONFIG_AGENT_TYPE,
     LP_BORROW_SAFETY_MARGIN,
     LP_DEPOSIT_AMOUNT,
+    LP_LIQUIDATION_PENALTY,
 )
 
 
@@ -196,7 +197,9 @@ class LendingProtocol(gym.Env):
         deposit_amount = LP_DEPOSIT_AMOUNT
         deposit_price = self.plf_pools[pool_collateral].get_token_price()
         borrow_price = self.plf_pools[pool_loan].get_token_price()
-        L_t = self.plf_pools[pool_loan].get_collateral_factor() - LP_BORROW_SAFETY_MARGIN
+        # TODO: For test reasons, I have manipulated L_t
+        # L_t = self.plf_pools[pool_loan].get_collateral_factor() - LP_BORROW_SAFETY_MARGIN
+        L_t = self.plf_pools[pool_loan].get_collateral_factor() + 0.05
         borrow_amount = (deposit_amount * deposit_price * L_t) / borrow_price
 
         # 2) Deduct the collateral from the agent first
@@ -275,16 +278,49 @@ class LendingProtocol(gym.Env):
         if self.worst_loans.get(pool_id) is None:
             return 0, False
 
-        borrow_key, borrow_hash, health_factor = self.worst_loans.get(pool_id)
+        borrow_key, loan_hash, health_factor = self.worst_loans.get(pool_id)
         if health_factor > 1:
             logging.info(
                 f"Agent {agent_id} tried to liquidate a loan from pool {pool_id},"
                 f" however the loan has a good health factor: {health_factor}"
             )
             return 0, False
-        # 3) Liquidate the loan accordingly
+        # 3) Repay the loan funds
+        liquidated_agent_id, pool_collateral, pool_loan = borrow_key
+        loan_amount = self.plf_pools[pool_loan].get_borrow(loan_hash)
+        # Remove funds from the agent
+        reward, success = self._remove_agent_funds(agent_id, pool_loan, loan_amount)
+        if not success:
+            logging.info(
+                f"Agent {agent_id} tried to liquidate pool {pool_loan} by paying {loan_amount},"
+                f"however it didn't have enough funds."
+            )
+            return 0.0, False
+        # Add the funds to the pool
+        self.plf_pools[pool_loan].return_borrow(loan_hash)
 
+        # 4) Distribute the collateral to the liquidator (agent_id) and
+        #    the remaining value to the liquidated agent (liquidated_agent_id)
+        loan_plus_penalty = loan_amount * self.plf_pools[pool_loan].get_token_price() * (1 + LP_LIQUIDATION_PENALTY)
+        collateral_amount = self.plf_pools[pool_collateral].remove_supply(loan_hash)
+        collateral_value = collateral_amount * self.plf_pools[pool_collateral].get_token_price()
 
+        # Liquidator receives loan_plus_penalty -> loan_amount
+        collateral_token = self.plf_pools[pool_collateral].get_token_name()
+        liquidator_amount = loan_plus_penalty / self.plf_pools[pool_collateral].get_token_price()
+        remaining_amount = (collateral_value - loan_plus_penalty) / self.plf_pools[pool_collateral].get_token_price()
+        self.agent_list[agent_id].add_balance(collateral_token, liquidator_amount)
+        self.agent_list[liquidated_agent_id].add_balance(collateral_token, remaining_amount)
+        logging.info(
+            f"Pool {pool_id} was liquidated, liquidator paid {loan_amount} "
+            f"and received {liquidator_amount}. The remaining {remaining_amount} "
+            f"were transfered to Agent {liquidated_agent_id}"
+         )
+
+        # 5) Remove the loan from the borrow_record
+        self.borrow_record[borrow_key].pop(self.borrow_record[borrow_key].index(loan_hash))
+
+        return 0.0, True
 
     def _remove_agent_funds(self, agent_id: int, pool_to: int, amount: float):
         pool_token = self.plf_pools[pool_to].get_token_name()
