@@ -5,7 +5,6 @@ from typing import Dict
 from utils.agents import AttentionAgent
 from abc import abstractmethod
 
-from envs.market_env.lending_protocol import LendingProtocol
 from envs.market_env.constants import (
     ACTION_USER_DEPOSIT, ACTION_USER_WITHDRAW, ACTION_USER_BORROW, ACTION_USER_REPAY, ACTION_USER_LIQUIDATE,
 )
@@ -34,7 +33,7 @@ class CustomAgent(AttentionAgent):
         return self.name
 
     @abstractmethod
-    def reward(self, lending_protocol: LendingProtocol, action: str) -> float:
+    def reward(self, lending_protocol, action: str) -> float:
         """
         Returns the reward of the agent based on the environment
         """
@@ -86,7 +85,7 @@ class UserAgent(CustomAgent):
         assert self.balance.get(token_name) is not None and self.balance[token_name] >= amount, f"Agent {self.name} does not have enough funds"
         self.balance[token_name] -= amount
 
-    def reward(self, lending_protocol: LendingProtocol, action: str) -> float:
+    def reward(self, lending_protocol, action: str) -> float:
         return self.reward_dict[action]
 
     def __repr__(self):
@@ -107,7 +106,7 @@ class GovernanceAgent(CustomAgent):
         super().__init__(action_space=action_space, observation_space=observation_space, name=name,
                          hidden_dim=hidden_dim, lr=lr, onehot_dim=onehot_dim)
 
-    def reward(self, lending_protocol: LendingProtocol, action: str) -> float:
+    def reward(self, lending_protocol, action: str) -> float:
         pass
 
     def __repr__(self):

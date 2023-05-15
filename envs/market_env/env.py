@@ -140,11 +140,11 @@ class MultiAgentEnv(gym.Env):
         else:
             raise NotImplementedError("Action Code {} is unknown".format(action_id))
 
-    def reset(self) -> Tuple[ObsType, torch.Tensor, bool, bool, dict]:
+    def reset(self) -> torch.Tensor:
         lp_state, reward, terminated, truncated, lp_logs = self.lending_protocol.reset()
         market_state, _, _, _, market_logs = self.market.reset()
         state = torch.cat([lp_state, market_state])
-        return state, reward, terminated, truncated, lp_logs
+        return state
 
     def set_agents(self, agent_list: List[AttentionAgent]) -> None:
         self.lending_protocol.set_agent(agent_list)
