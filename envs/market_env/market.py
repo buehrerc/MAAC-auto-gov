@@ -27,7 +27,7 @@ class Market(gym.Env):
         self.observation_space: spaces.Space = spaces.Space()
         self.reset()
 
-    def reset(self) -> Tuple[ObsType, torch.Tensor, bool, bool, dict]:
+    def reset(self) -> ObsType:
         """
         Resets the market to the initial parameters
         Token object does not have a reset function, since the Tokens are just reinitialized
@@ -43,7 +43,7 @@ class Market(gym.Env):
             low=np.concatenate([o.low for o in observation_spaces]),
             high=np.concatenate([o.high for o in observation_spaces])
         )
-        return self._get_state(), torch.Tensor([]), False, False, dict()
+        return self._get_state()
 
     def _get_state(self) -> ObsType:
         return torch.cat([token.get_state() for token in self.tokens.values()])
@@ -52,14 +52,14 @@ class Market(gym.Env):
     def _initialize_token(param):
         return Token(**param)
 
-    def step(self, action: ActType) -> Tuple[ObsType, torch.Tensor, bool, bool, dict]:
+    def step(self, action: ActType) -> Tuple[ObsType, torch.Tensor, bool, dict]:
         """
         Updates all prices of the asset token within the market
         :param action: Unused parameter
         :return: None
         """
         state = torch.cat([token.update_price() for token in self.tokens.values()])
-        return state, torch.Tensor([]), False, False, dict()
+        return state, torch.Tensor([]), False, dict()
 
     def get_prices(self) -> Dict[str, float]:
         return dict([(name, token.get_price()) for name, token in self.tokens.items()])

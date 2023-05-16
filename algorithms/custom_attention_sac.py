@@ -1,5 +1,8 @@
+from typing import List
+
 from algorithms.attention_sac import AttentionSAC
 from envs.market_env.env import MultiAgentEnv
+from utils.custom_agents import CustomAgent
 
 
 class CustomAttentionSAC(AttentionSAC):
@@ -9,6 +12,7 @@ class CustomAttentionSAC(AttentionSAC):
     def __init__(
         self,
         env: MultiAgentEnv,
+        agents: List[CustomAgent],
         gamma: float = 0.95,
         tau: float = 0.01,
         pi_lr: float = 0.01,
@@ -38,4 +42,10 @@ class CustomAttentionSAC(AttentionSAC):
                          critic_hidden_dim=critic_hidden_dim, attend_heads=attend_heads,
                          **kwargs)
         # Overwrite the agents
-        self.agents = env.agent_list
+        self.agents = agents
+        self.init_dict = {'gamma': gamma, 'tau': tau,
+                          'pi_lr': pi_lr, 'q_lr': q_lr,
+                          'reward_scale': reward_scale,
+                          'critic_hidden_dim': critic_hidden_dim,
+                          'attend_heads': attend_heads,
+                          'sa_size': sa_size}

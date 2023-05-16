@@ -65,7 +65,7 @@ class LendingProtocol(gym.Env):
 # =====================================================================================================================
 #   ENVIRONMENT ACTIONS
 # =====================================================================================================================
-    def reset(self) -> Tuple[ObsType, torch.Tensor, bool, bool, dict]:
+    def reset(self) -> ObsType:
         """
         Resets the LendingProtocol and all its plf pools to the initial parameters by reinitializing the PLFPools
         :return: Tuple[ObsType, torch.Tensor, bool, bool, dict]
@@ -96,15 +96,10 @@ class LendingProtocol(gym.Env):
             for v in self.worst_loans.values()
         ])
 
-        return (
-            torch.cat(state),
-            self.reward,
-            False,
-            False,
-            dict()
-        )
+        return torch.cat(state)
 
-    def step(self, action=None) -> Tuple[ObsType, torch.Tensor, bool, bool, dict]:
+
+    def step(self, action=None) -> Tuple[ObsType, torch.Tensor, List[bool], dict]:
         # 1) Update all plf_pools based on the actions of the agents
         pool_states = [pool.step() for pool in self.plf_pools]
 
@@ -118,14 +113,15 @@ class LendingProtocol(gym.Env):
 
         # 3) Reset the reward
         last_reward = self.reward
-        self.reward = torch.zeros(len(self.agent_mask))
+        # TODO: Define the reward
+        # self.reward = torch.zeros(len(self.agent_mask))
+        self.reward = torch.ones(len(self.agent_mask))
 
         return (
-            torch.cat(pool_states),    # Observation State
-            last_reward,    # Reward
-            False,          # Terminated
-            False,          # Truncated
-            dict()          # Info
+            torch.cat(pool_states),          # Observation State
+            last_reward,                     # Reward
+            [False] * len(self.agent_list),  # Terminated
+            dict()                           # Info
         )
 
     def _get_health_factor(self, pool_collateral: int, pool_loan: int, loan_hash: str) -> float:
@@ -274,7 +270,7 @@ class LendingProtocol(gym.Env):
         reward, success = self._remove_agent_funds(agent_id, pool_loan, borrowed_amount)
         if not success:
             # Agent cannot repay the borrowed funds -> reset the borrowed funds in the pool
-            self.plf_pools[pool_loan].get_borrow(loan_hash, borrowed_amount)
+            self.plf_pools[pool_loan].start_borrow(loan_hash, borrowed_amount)
             logging.info(
                 f"Agent {agent_id} tried to repay the loan from pool {pool_loan}, "
                 f"but didn't have enough funds."

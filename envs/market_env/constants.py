@@ -72,3 +72,17 @@ TOKEN_OBSERVATION_SPACE = spaces.Box(
     high=np.array([np.inf, np.inf, np.inf, np.inf]),
     dtype=np.float32
 )
+
+# 4.4) Agents
+AGENT_OBSERVATION_SPACE = {
+    CONFIG_AGENT_TYPE_GOVERNANCE: lambda num_plf_pools: spaces.Box(
+        low=np.array([]),
+        high=np.array([]),
+        dtype=np.float32
+    ),
+    CONFIG_AGENT_TYPE_USER: lambda num_plf_pools: spaces.Box(
+        low=np.array([-np.inf]*num_plf_pools),
+        high=np.array([np.inf]*num_plf_pools),
+        dtype=np.float32
+    )
+}

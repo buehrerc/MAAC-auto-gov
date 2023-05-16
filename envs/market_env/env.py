@@ -13,7 +13,8 @@ from utils.agents import AttentionAgent
 from envs.market_env.constants import (
     CONFIG_AGENT_TYPE_GOVERNANCE,
     CONFIG_AGENT_TYPE_USER,
-    PLF_STEP_SIZE
+    PLF_STEP_SIZE,
+    AGENT_OBSERVATION_SPACE,
 )
 
 
@@ -33,34 +34,52 @@ class MultiAgentEnv(gym.Env):
         self.config = config
         self.lending_protocol = lending_protocol
         self.market = market
-        self.agent_list = None
+        self.agents = None
 
         # Extract attributes of lending_protocol
         self.agent_mask = lending_protocol.agent_mask
+        agent_observation_space = [AGENT_OBSERVATION_SPACE[agent_type](len(self.lending_protocol.plf_pools)) for agent_type in self.agent_mask]
 
         # Gym Attributes
-        self.observation_space = combine_observation_space([lending_protocol, market])
+        self.observation_space = combine_observation_space([lending_protocol, market], obs_spaces=agent_observation_space)
         self.action_encoding = encode_action(len(self.lending_protocol.plf_pools))
         self.action_space = spaces.Tuple([spaces.Discrete(len(self.action_encoding[agent_type])) for agent_type in self.agent_mask])
+
+    def reset(self) -> torch.Tensor:
+        lp_state = self.lending_protocol.reset()
+        market_state = self.market.reset()
+        assert self.agents is not None, "Environment not correctly initialized. Environment has no agents"
+        # Append the agents state
+        agent_state = self._get_agent_state()
+        state = torch.cat([lp_state, market_state, agent_state])
+        return state
 
     def render(self) -> Optional[Union[RenderFrame, List[RenderFrame]]]:
         pass
 
-    def step(self, action: ActType) -> Tuple[ObsType, torch.Tensor, bool, bool, dict]:
+    def step(self, action: ActType) -> Tuple[ObsType, torch.Tensor, List[bool], dict]:
         """
         Step first applies actions of the agents to the LendingPool. Afterwards, the Market gets updated.
         :param action: Action of the users
-        :return:
+        :return: new abservations, rewards, done, logs
         """
         # Set the action of each agent first:
         initial_reward = self._set_action(action)
 
         # Update the whole environment based on the actions of the agents
-        lp_state, reward, terminated, truncated, lp_logs = self.lending_protocol.step(action)
-        market_state, _, _, _, market_logs = self.market.step(None)
+        lp_state, reward, terminated, lp_logs = self.lending_protocol.step(action)
+        market_state, _, _, market_logs = self.market.step(None)
+        agent_state = self._get_agent_state()
+        state = torch.cat([lp_state, market_state, agent_state])
 
-        state = torch.cat([lp_state, market_state])
-        return state, reward, terminated, truncated, lp_logs
+        return state, reward, terminated, lp_logs
+
+    def _get_agent_state(self) -> torch.Tensor:
+        agent_state = list()
+        for agent, agent_type in zip(self.agents, self.agent_mask):
+            if agent_type == CONFIG_AGENT_TYPE_USER:
+                agent_state.extend([agent.get_balance(token_name) for token_name in self.market.tokens.keys()])
+        return torch.Tensor(agent_state)
 
     def _set_action(self, action_list: torch.Tensor) -> List:
         action_returns = list()
@@ -140,12 +159,6 @@ class MultiAgentEnv(gym.Env):
         else:
             raise NotImplementedError("Action Code {} is unknown".format(action_id))
 
-    def reset(self) -> torch.Tensor:
-        lp_state, reward, terminated, truncated, lp_logs = self.lending_protocol.reset()
-        market_state, _, _, _, market_logs = self.market.reset()
-        state = torch.cat([lp_state, market_state])
-        return state
-
     def set_agents(self, agent_list: List[AttentionAgent]) -> None:
-        self.agent_list = agent_list
-        self.lending_protocol.set_agent(self.agent_list)
+        self.agents = agent_list
+        self.lending_protocol.set_agent(self.agents)

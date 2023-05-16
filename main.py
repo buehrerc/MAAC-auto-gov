@@ -11,6 +11,7 @@ from pathlib import Path
 from algorithms.custom_attention_sac import CustomAttentionSAC
 from utils.make_env import make_env
 from utils.make_agent import make_agent
+from utils.env_wrappers import SubprocVecEnv, DummyVecEnv
 from algorithms.attention_sac import AttentionSAC
 from envs.market_env.env import MultiAgentEnv
 from utils.buffer import ReplayBuffer
@@ -42,7 +43,7 @@ def init_params(config):
     log_dir = run_dir / 'logs'
     os.makedirs(log_dir)
     logger = SummaryWriter(str(log_dir))
-    return logger, run_dir, log_dir
+    return logger, run_num, run_dir, log_dir
 
 
 def init_env(env_config):
@@ -58,6 +59,18 @@ def init_env(env_config):
     env.set_agents(agents)
     env.reset()
     return env
+
+
+def make_parallel_env(env_config, n_rollout_threads, seed):
+    def get_env_fn(rank):
+        def init_env_():
+            env = make_env(env_config)
+            return env
+        return init_env_
+    if n_rollout_threads == 1:
+        return DummyVecEnv([get_env_fn(0)])
+    else:
+        return SubprocVecEnv([get_env_fn(i) for i in range(n_rollout_threads)])
 
 
 def train(
@@ -78,17 +91,29 @@ def train(
 
         for et_i in range(config.episode_length):
             # rearrange observations to be per agent, and convert to torch Variable
-            torch_obs = [Variable(torch.Tensor(np.vstack(obs)),
+            # CBUE MODIFICATION: added a transform and replaced obs[:, i] with obs
+            torch_obs = [Variable(torch.Tensor(np.vstack(obs)).T,
                                   requires_grad=False)
                          for i in range(model.nagents)]
             # get actions as torch Variables
             torch_agent_actions = model.step(torch_obs, explore=True)
             # convert actions to numpy arrays
             agent_actions = [ac.data.numpy() for ac in torch_agent_actions]
+
+            # CBUE MODIFICATION: different mapping of the actions.
             # rearrange actions to be per environment
-            actions = [[ac[i] for ac in agent_actions] for i in range(config.n_rollout_threads)]
+            # actions = [[ac[i] for ac in agent_actions] for i in range(config.n_rollout_threads)]
+            actions = [np.where(ac[0] == 1)[0][0] for ac in agent_actions]
             next_obs, rewards, dones, infos = env.step(actions)
-            replay_buffer.push(obs, agent_actions, rewards, next_obs, dones)
+
+            # CBUE MODIFICATION: Reshape the obs to comply with the replay_buffer convention
+            # Has to do with the fact that the initial pipeline was using multiple environments to train in parallel
+            # => Introduction of such a feature at a later stage of the project
+            obs = obs.repeat(model.nagents, 1).unsqueeze(0)
+            transformed_next_obs = next_obs.repeat(model.nagents, 1).unsqueeze(0)
+            rewards = rewards.unsqueeze(0)
+            dones = np.array([dones])
+            replay_buffer.push(obs, agent_actions, rewards, transformed_next_obs, dones)
             obs = next_obs
             t += config.n_rollout_threads
             if (len(replay_buffer) >= config.batch_size and
@@ -119,11 +144,16 @@ def train(
 
 def run(env_config, config):
     init_logger(env_config)
-    logger, run_dir, log_dir = init_params(config)
+    logger, run_num, run_dir, log_dir = init_params(config)
+    # env = make_parallel_env(env_config, config.n_rollout_threads, run_num)
+    # obsp, acsp = env.get_spaces()
+    # agents = make_agent(env_config, obsp, acsp)
+    # env.set_agent(agents)
     env = init_env(env_config)
 
     model = CustomAttentionSAC(
         env=env,
+        agents=env.agents,
         tau=config.tau,
         pi_lr=config.pi_lr,
         q_lr=config.q_lr,
@@ -132,9 +162,11 @@ def run(env_config, config):
         attend_heads=config.attend_heads,
         reward_scale=config.reward_scale
     )
-    replay_buffer = ReplayBuffer(config.buffer_length, model.nagents,
-                                 [env.observation_space.shape[0]] * len(env.action_space),
-                                 [acsp.shape[0] if isinstance(acsp, Box) else acsp.n
+    replay_buffer = ReplayBuffer(
+        max_steps=config.buffer_length,
+        num_agents=model.nagents,
+        obs_dims=[env.observation_space.shape[0]] * len(env.action_space),
+        ac_dims=[acsp.shape[0] if isinstance(acsp, Box) else acsp.n
                                   for acsp in env.action_space])
 
     train(env, model, replay_buffer, logger, config, run_dir)

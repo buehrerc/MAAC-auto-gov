@@ -28,11 +28,13 @@ def worker(remote, parent_remote, env_fn_wrapper):
         elif cmd == 'get_spaces':
             remote.send((env.observation_space, env.action_space))
         elif cmd == 'get_agent_types':
-            if all([hasattr(a, 'adversary') for a in env.agents]):
-                remote.send(['adversary' if a.adversary else 'agent' for a in
-                             env.agents])
-            else:
-                remote.send(['agent' for _ in env.agents])
+            # CBUE MODIFICATION:
+            # if all([hasattr(a, 'adversary') for a in env.agents]):
+            #     remote.send(['adversary' if a.adversary else 'agent' for a in
+            #                  env.agents])
+            remote.send(env.agent_mask)
+        elif cmd == 'set_agent':
+            env.set_agents(data)
         else:
             raise NotImplementedError
 
@@ -92,6 +94,13 @@ class SubprocVecEnv(VecEnv):
         for p in self.ps:
             p.join()
         self.closed = True
+
+    def set_agent(self, agent_list):
+        for remote in self.remotes:
+            remote.send(('set_agent', agent_list))
+
+    def get_spaces(self):
+        return self.remotes[0].send(('get_spaces', None))
 
 
 class DummyVecEnv(VecEnv):

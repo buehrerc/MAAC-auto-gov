@@ -142,7 +142,10 @@ class AttentionCritic(nn.Module):
         # calculate Q per agent
         all_rets = []
         for i, a_i in enumerate(agents):
-            head_entropies = [(-((probs + 1e-8).log() * probs).squeeze().sum(1)
+            # CBUE MODIFICATION: Changed dimension of sum
+            # head_entropies = [(-((probs + 1e-8).log() * probs).squeeze().sum(1)
+            #                    .mean()) for probs in all_attend_probs[i]]
+            head_entropies = [(-((probs + 1e-8).log() * probs).squeeze().sum()
                                .mean()) for probs in all_attend_probs[i]]
             agent_rets = []
             critic_in = torch.cat((s_encodings[i], *other_all_values[i]), dim=1)

@@ -39,6 +39,10 @@ class CustomAgent(AttentionAgent):
         """
         pass
 
+    @abstractmethod
+    def get_state(self) -> torch.Tensor:
+        pass
+
 
 class UserAgent(CustomAgent):
 
@@ -54,8 +58,7 @@ class UserAgent(CustomAgent):
         **kwargs
     ):
         self.balance = balance
-        observation_space_large = observation_space + len(self.balance)
-        super().__init__(action_space=action_space, observation_space=observation_space_large, name=name,
+        super().__init__(action_space=action_space, observation_space=observation_space, name=name,
                          hidden_dim=hidden_dim, lr=lr, onehot_dim=onehot_dim)
         self.reward_dict = {
             ACTION_USER_DEPOSIT: 10,
@@ -65,9 +68,11 @@ class UserAgent(CustomAgent):
             ACTION_USER_LIQUIDATE: 10,
         }
 
-    def step(self, obs: torch.Tensor, explore=False):
-        obs_large = torch.concatenate([obs, torch.Tensor(self.balance.values())])
-        super().step(obs_large, explore)
+    def step(self, obs: torch.Tensor, explore=False) -> torch.Tensor:
+        return super().step(obs, explore)
+
+    def reward(self, lending_protocol, action: str) -> float:
+        return self.reward_dict[action]
 
     def get_balance(self, token_name: str) -> float:
         if token_name not in self.balance.keys():
@@ -84,9 +89,6 @@ class UserAgent(CustomAgent):
         logging.debug(f"Agent {self.name} has paid {amount} of {token_name}")
         assert self.balance.get(token_name) is not None and self.balance[token_name] >= amount, f"Agent {self.name} does not have enough funds"
         self.balance[token_name] -= amount
-
-    def reward(self, lending_protocol, action: str) -> float:
-        return self.reward_dict[action]
 
     def __repr__(self):
         return f"UserAgent('{self.name}', balance: {self.balance})"
