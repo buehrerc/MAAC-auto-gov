@@ -10,6 +10,7 @@ CONFIG_AGENT = "agent"
 CONFIG_AGENT_TYPE = "type"
 CONFIG_AGENT_TYPE_GOVERNANCE = "governance"
 CONFIG_AGENT_TYPE_USER = "user"
+CONFIG_AGENT_BALANCE = "balance"
 
 # 2) ACTION ENCODING
 ACTION_USER_DEPOSIT = "deposit"
@@ -34,7 +35,6 @@ LP_BORROW_SAFETY_MARGIN = 0.15
 LP_DEFAULT_HEALTH_FACTOR = 2
 LP_LIQUIDATION_PENALTY = 0.1
 LP_DEPOSIT_AMOUNT = 1000
-
 
 # 4) Gym Constants
 # 4.1) PLF Pool
@@ -74,15 +74,6 @@ TOKEN_OBSERVATION_SPACE = spaces.Box(
 )
 
 # 4.4) Agents
-AGENT_OBSERVATION_SPACE = {
-    CONFIG_AGENT_TYPE_GOVERNANCE: lambda num_plf_pools: spaces.Box(
-        low=np.array([]),
-        high=np.array([]),
-        dtype=np.float32
-    ),
-    CONFIG_AGENT_TYPE_USER: lambda num_plf_pools: spaces.Box(
-        low=np.array([-np.inf]*num_plf_pools),
-        high=np.array([np.inf]*num_plf_pools),
-        dtype=np.float32
-    )
-}
+AGENT_OBSERVATION_SPACE = lambda num_plf_pools: spaces.Box(low=np.array([-np.inf]*num_plf_pools),
+                                                           high=np.array([np.inf]*num_plf_pools),
+                                                           dtype=np.float32)

@@ -22,7 +22,7 @@ def init_logger(log_dir):
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s:[%(levelname)s] >> {%(module)s}: %(message)s",
-        handlers=[logging.FileHandler(os.path.join(log_dir, "/debug.log")), logging.StreamHandler()],
+        handlers=[logging.FileHandler(os.path.join(log_dir, "debug.log")), logging.StreamHandler()],
     )
 
 
@@ -50,15 +50,16 @@ def init_env(env_config):
     logging.info("Start Environment Initialization")
     env = make_env(env_config)
     logging.info("Finished Environment Initialization")
+    logging.info(f"Gym Parameters:: observation_space={env.observation_space.shape}, action_space={env.action_space}")
+    env.reset()
+    return env
 
+
+def init_agent(env_config, env):
     logging.info("Start Agent Initialization")
     agents = make_agent(env_config, env.observation_space, env.action_space)
     logging.info("Finished Agent Initialization")
-
-    logging.info(f"Gym Parameters:: observation_space={env.observation_space.shape}, action_space={env.action_space}")
-    env.set_agents(agents)
-    env.reset()
-    return env
+    return agents
 
 
 def make_parallel_env(env_config, n_rollout_threads, seed):
@@ -151,10 +152,11 @@ def run(env_config, config):
     # agents = make_agent(env_config, obsp, acsp)
     # env.set_agent(agents)
     env = init_env(env_config)
+    agents = init_agent(env_config, env)
 
     model = CustomAttentionSAC(
         env=env,
-        agents=env.agents,
+        agents=agents,
         tau=config.tau,
         pi_lr=config.pi_lr,
         q_lr=config.q_lr,
@@ -179,15 +181,16 @@ def run(env_config, config):
 
 
 def dev(env_config):
-    init_logger(env_config)
+    init_logger('./log')
     env = init_env(env_config)
+    agents = init_agent(env_config, env)
 
     actions = [(0, 1), (0, 2), (0, 4), (0, 12), (0, 4), (0, 3)]
 
     for i, a in enumerate(actions):
         logging.info(f"Start Round {i} ===============================================================================")
-        state, reward, _, _, _ = env.step(action=env.action_space.sample())
-        # state, reward, _, _, _ = env.step(action=a)
+        # state, reward, _, _ = env.step(action=env.action_space.sample())
+        state, reward, _, _ = env.step(action=a)
         logging.debug(f"Environment:: environment_state={state}, reward={reward}")
 
     logging.info("Finished")
@@ -221,4 +224,5 @@ if __name__ == '__main__':
     config_ = parser.parse_args()
     fs = open(config_.config)
     env_config_ = json.load(fs)
-    run(env_config_, config_)
+    # run(env_config_, config_)
+    dev(env_config_)

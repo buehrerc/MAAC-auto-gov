@@ -32,17 +32,6 @@ class CustomAgent(AttentionAgent):
     def get_name(self) -> str:
         return self.name
 
-    @abstractmethod
-    def reward(self, lending_protocol, action: str) -> float:
-        """
-        Returns the reward of the agent based on the environment
-        """
-        pass
-
-    @abstractmethod
-    def get_state(self) -> torch.Tensor:
-        pass
-
 
 class UserAgent(CustomAgent):
 
@@ -50,48 +39,20 @@ class UserAgent(CustomAgent):
         self,
         action_space: int,
         observation_space: int,
-        balance: Dict[str, float],
         name: str = "UserAgent",
         hidden_dim: int = 64,
         lr: float = 0.01,
         onehot_dim: int = 0,
         **kwargs
     ):
-        self.balance = balance
         super().__init__(action_space=action_space, observation_space=observation_space, name=name,
                          hidden_dim=hidden_dim, lr=lr, onehot_dim=onehot_dim)
-        self.reward_dict = {
-            ACTION_USER_DEPOSIT: 10,
-            ACTION_USER_WITHDRAW: 10,
-            ACTION_USER_BORROW: 10,
-            ACTION_USER_REPAY: 10,
-            ACTION_USER_LIQUIDATE: 10,
-        }
 
     def step(self, obs: torch.Tensor, explore=False) -> torch.Tensor:
         return super().step(obs, explore)
 
-    def reward(self, lending_protocol, action: str) -> float:
-        return self.reward_dict[action]
-
-    def get_balance(self, token_name: str) -> float:
-        if token_name not in self.balance.keys():
-            self.balance[token_name] = 0
-        return self.balance[token_name]
-
-    def add_balance(self, token_name: str, amount: float) -> None:
-        logging.debug(f"Agent {self.name} has received {amount} of {token_name}")
-        if token_name not in self.balance.keys():
-            self.balance[token_name] = 0
-        self.balance[token_name] += amount
-
-    def sub_balance(self, token_name: str, amount: float) -> None:
-        logging.debug(f"Agent {self.name} has paid {amount} of {token_name}")
-        assert self.balance.get(token_name) is not None and self.balance[token_name] >= amount, f"Agent {self.name} does not have enough funds"
-        self.balance[token_name] -= amount
-
     def __repr__(self):
-        return f"UserAgent('{self.name}', balance: {self.balance})"
+        return f"UserAgent('{self.name}')"
 
 
 class GovernanceAgent(CustomAgent):

@@ -9,10 +9,12 @@ from gym.core import ActType, ObsType, RenderFrame
 from envs.market_env.lending_protocol import LendingProtocol
 from envs.market_env.market import Market
 from envs.market_env.utils import combine_observation_space, encode_action
-from utils.agents import AttentionAgent
 from envs.market_env.constants import (
+    CONFIG_AGENT,
+    CONFIG_AGENT_TYPE,
     CONFIG_AGENT_TYPE_GOVERNANCE,
     CONFIG_AGENT_TYPE_USER,
+    CONFIG_AGENT_BALANCE,
     PLF_STEP_SIZE,
     AGENT_OBSERVATION_SPACE,
 )
@@ -34,11 +36,20 @@ class MultiAgentEnv(gym.Env):
         self.config = config
         self.lending_protocol = lending_protocol
         self.market = market
-        self.agents = None
 
-        # Extract attributes of lending_protocol
-        self.agent_mask = lending_protocol.agent_mask
-        agent_observation_space = [AGENT_OBSERVATION_SPACE[agent_type](len(self.lending_protocol.plf_pools)) for agent_type in self.agent_mask]
+        # Agent states
+        self.agent_mask: List[str] = [agent[CONFIG_AGENT_TYPE] for agent in self.config[CONFIG_AGENT]]
+        self.agent_balance: List[Dict] = [
+            {
+                token_name: agent_dict.get(CONFIG_AGENT_BALANCE, {}).get(token_name, 0)
+                for token_name in self.market.tokens.keys()
+            }
+            for agent_dict in self.config[CONFIG_AGENT]
+        ]
+
+        # Interact with lending_protocol
+        agent_observation_space = [AGENT_OBSERVATION_SPACE(len(self.lending_protocol.plf_pools)) for _ in self.agent_mask]
+        lending_protocol.set_agent_balance(self.agent_balance)
 
         # Gym Attributes
         self.observation_space = combine_observation_space([lending_protocol, market], obs_spaces=agent_observation_space)
@@ -48,7 +59,6 @@ class MultiAgentEnv(gym.Env):
     def reset(self) -> torch.Tensor:
         lp_state = self.lending_protocol.reset()
         market_state = self.market.reset()
-        assert self.agents is not None, "Environment not correctly initialized. Environment has no agents"
         # Append the agents state
         agent_state = self._get_agent_state()
         state = torch.cat([lp_state, market_state, agent_state])
@@ -75,10 +85,7 @@ class MultiAgentEnv(gym.Env):
         return state, reward, terminated, lp_logs
 
     def _get_agent_state(self) -> torch.Tensor:
-        agent_state = list()
-        for agent, agent_type in zip(self.agents, self.agent_mask):
-            if agent_type == CONFIG_AGENT_TYPE_USER:
-                agent_state.extend([agent.get_balance(token_name) for token_name in self.market.tokens.keys()])
+        agent_state = sum([list(balance.values()) for balance in self.agent_balance], [])
         return torch.Tensor(agent_state)
 
     def _set_action(self, action_list: torch.Tensor) -> List:
@@ -158,7 +165,3 @@ class MultiAgentEnv(gym.Env):
 
         else:
             raise NotImplementedError("Action Code {} is unknown".format(action_id))
-
-    def set_agents(self, agent_list: List[AttentionAgent]) -> None:
-        self.agents = agent_list
-        self.lending_protocol.set_agent(self.agents)

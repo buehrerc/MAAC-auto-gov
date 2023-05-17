@@ -1,6 +1,5 @@
 import logging
 import uuid
-import gym
 from gym import spaces
 from gym.core import ObsType, RenderFrame
 from typing import Dict, List, Tuple, Optional, Union
@@ -9,7 +8,6 @@ import numpy as np
 
 from envs.market_env.market import Market
 from envs.market_env.plf_pool import PLFPool
-from utils.custom_agents import CustomAgent
 from envs.market_env.utils import (
     combine_observation_space,
 )
@@ -23,7 +21,6 @@ from envs.market_env.constants import (
     LP_LIQUIDATION_PENALTY,
     LP_OBSERVATION_SPACE,
     LP_DEFAULT_HEALTH_FACTOR,
-    ACTION_USER_DEPOSIT, ACTION_USER_WITHDRAW, ACTION_USER_BORROW, ACTION_USER_REPAY, ACTION_USER_LIQUIDATE,
 )
 
 
@@ -32,7 +29,7 @@ class InvalidTransaction(Exception):
         super().__init__(message)
 
 
-class LendingProtocol(gym.Env):
+class LendingProtocol:
     """
     Class implements an AAVE-like over-collateralized lending protocol.
     """
@@ -54,7 +51,7 @@ class LendingProtocol(gym.Env):
         # Initialize additional attributes
         self.plf_pools: List[PLFPool] = list()
         self.agent_mask: List[str] = [agent[CONFIG_AGENT_TYPE] for agent in self.config[CONFIG_AGENT]]
-        self.agent_list: List[CustomAgent] = list()
+        self.agent_balance = None
 
         # Gym Environment Attributes
         self.observation_space = spaces.Space()
@@ -120,7 +117,7 @@ class LendingProtocol(gym.Env):
         return (
             torch.cat(pool_states),          # Observation State
             last_reward,                     # Reward
-            [False] * len(self.agent_list),  # Terminated
+            [False] * len(self.agent_mask),  # Terminated
             dict()                           # Info
         )
 
@@ -152,8 +149,8 @@ class LendingProtocol(gym.Env):
     def render(self) -> Optional[Union[RenderFrame, List[RenderFrame]]]:
         pass
 
-    def set_agent(self, agent_list: List[CustomAgent]):
-        self.agent_list = agent_list
+    def set_agent_balance(self, agent_balance: List[Dict]) -> None:
+        self.agent_balance = agent_balance
 
 # =====================================================================================================================
 #   AGENT ACTIONS
@@ -199,7 +196,7 @@ class LendingProtocol(gym.Env):
         withdraw_amount = self.plf_pools[pool_from].remove_supply(withdraw_hash)
 
         # 4) Add the funds to the agents balance
-        self.agent_list[agent_id].add_balance(token_name=pool_token, amount=withdraw_amount)
+        self.agent_balance[agent_id][pool_token] += withdraw_amount
 
         return 0.0, True
 
@@ -241,7 +238,7 @@ class LendingProtocol(gym.Env):
 
         # 4) Withdraw the borrowed funds
         borrow_token = self.plf_pools[pool_loan].get_token_name()
-        self.agent_list[agent_id].add_balance(token_name=borrow_token, amount=borrow_amount)
+        self.agent_balance[agent_id][borrow_token] += borrow_amount
         self.plf_pools[pool_loan].start_borrow(key=loan_hash, amount=borrow_amount)
 
         return 0, True
@@ -280,7 +277,7 @@ class LendingProtocol(gym.Env):
         # 4) Transfer the collateral back to the agent
         collateral_token = self.plf_pools[pool_collateral].get_token_name()
         collateral_amount = self.plf_pools[pool_collateral].remove_supply(loan_hash)
-        self.agent_list[agent_id].add_balance(token_name=collateral_token, amount=collateral_amount)
+        self.agent_balance[agent_id][collateral_token] += collateral_amount
 
         # 5) Remove the borrow record
         self.borrow_record[(agent_id, pool_collateral, pool_loan)].pop(0)
@@ -327,8 +324,8 @@ class LendingProtocol(gym.Env):
         collateral_token = self.plf_pools[pool_collateral].get_token_name()
         liquidator_amount = loan_plus_penalty / self.plf_pools[pool_collateral].get_token_price()
         remaining_amount = (collateral_value - loan_plus_penalty) / self.plf_pools[pool_collateral].get_token_price()
-        self.agent_list[agent_id].add_balance(collateral_token, liquidator_amount)
-        self.agent_list[liquidated_agent_id].add_balance(collateral_token, remaining_amount)
+        self.agent_balance[agent_id][collateral_token] += liquidator_amount
+        self.agent_balance[liquidated_agent_id][collateral_token] += remaining_amount
         logging.info(
             f"Pool {pool_id} was liquidated, liquidator paid {loan_amount} "
             f"and received {liquidator_amount}. The remaining {remaining_amount} "
@@ -342,7 +339,7 @@ class LendingProtocol(gym.Env):
 
     def _remove_agent_funds(self, agent_id: int, pool_to: int, amount: float):
         pool_token = self.plf_pools[pool_to].get_token_name()
-        agent_balance = self.agent_list[agent_id].get_balance(pool_token)
+        agent_balance = self.agent_balance[agent_id].get(pool_token)
         if agent_balance < amount:
             logging.info(
                 f"Agent {agent_id} tried to deposit {amount} into {pool_token},"
@@ -350,7 +347,7 @@ class LendingProtocol(gym.Env):
             )
             # TODO: Reward -> negative reward
             return 0, False
-        self.agent_list[agent_id].sub_balance(token_name=pool_token, amount=amount)
+        self.agent_balance[agent_id][pool_token] -= amount
         return 0, True
 
     def __repr__(self):

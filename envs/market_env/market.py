@@ -13,7 +13,7 @@ from envs.market_env.constants import (
 )
 
 
-class Market(gym.Env):
+class Market:
     """
     Market dictates the price of all assets
     The prices adhere a geometric Brownian motion with zero drift and a custom volatility
