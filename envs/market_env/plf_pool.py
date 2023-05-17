@@ -5,8 +5,8 @@ from gym.core import ObsType
 from typing import Dict
 from envs.market_env.market import Market
 from envs.market_env.constants import (
-    INITIATOR,
-    COLLATERAL_FACTOR_CHANGE_RATE,
+    PLF_INITIATOR,
+    PLF_COLLATERAL_FACTOR_CHANGE_RATE,
     PLF_RB_FACTOR,
     PLF_SPREAD,
     PLF_OBSERVATION_SPACE,
@@ -20,7 +20,7 @@ class PLFPool:
         token_name: str = "dai",
         initial_starting_funds: float = 1000,
         collateral_factor: float = 0.85,
-        col_factor_change_rate: float = COLLATERAL_FACTOR_CHANGE_RATE,
+        col_factor_change_rate: float = PLF_COLLATERAL_FACTOR_CHANGE_RATE,
         rb_factor: float = PLF_RB_FACTOR,
         spread: float = PLF_SPREAD,
         seed: int = 0
@@ -36,7 +36,7 @@ class PLFPool:
         # Pool Parameters
         self.collateral_factor: float = collateral_factor
         self.col_factor_change_rate: float = col_factor_change_rate
-        self.supply_token: Dict[str, float] = {INITIATOR: initial_starting_funds}
+        self.supply_token: Dict[str, float] = {PLF_INITIATOR: initial_starting_funds}
         self.borrow_token: Dict[str, float] = dict()
 
         # Reward Parameters

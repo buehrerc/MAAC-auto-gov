@@ -9,7 +9,6 @@ from gym.spaces import Box, Discrete
 from pathlib import Path
 
 from algorithms.custom_attention_sac import CustomAttentionSAC
-from utils.make_env import make_env
 from utils.make_agent import make_agent
 from utils.env_wrappers import SubprocVecEnv, DummyVecEnv
 from algorithms.attention_sac import AttentionSAC
@@ -48,7 +47,7 @@ def init_params(config):
 
 def init_env(env_config):
     logging.info("Start Environment Initialization")
-    env = make_env(env_config)
+    env = MultiAgentEnv(env_config)
     logging.info("Finished Environment Initialization")
     logging.info(f"Gym Parameters:: observation_space={env.observation_space.shape}, action_space={env.action_space}")
     env.reset()

@@ -11,21 +11,6 @@ for all agents. Each element of the list should be a numpy array,
 of size (env.world.dim_p + env.world.dim_c, 1). Physical actions precede
 communication actions in this array. See environment.py for more details.
 """
-import logging
-from envs.market_env.env import MultiAgentEnv
-
-
-def make_env(config, benchmark=False, discrete_action=False) -> MultiAgentEnv:
-    from envs.market_env.market import Market
-    from envs.market_env.lending_protocol import LendingProtocol
-
-    market = Market(config)
-    lending_protocol = LendingProtocol(market, config)
-    logging.info("Initialization:: " + str(market.__repr__()))
-    logging.info("Initialization:: " + str(lending_protocol.__repr__()))
-    return MultiAgentEnv(config, market, lending_protocol)
-
-
 def make_env_old(scenario_name, benchmark=False, discrete_action=False):
     '''
     Creates a MultiAgentEnv object as env. This can be used similar to a gym

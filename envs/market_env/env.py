@@ -24,21 +24,19 @@ class MultiAgentEnv(gym.Env):
     def __init__(
         self,
         config: Dict,
-        market: Market,
-        lending_protocol: LendingProtocol,
     ) -> None:
         """
         :param config: Environment Configs
-        :param market: Market object holding initialized Tokens
-        :param lending_protocol: LendingProtocol holding initialized PLFPools
         """
         super(MultiAgentEnv).__init__()
-        self.config = config
-        self.lending_protocol = lending_protocol
-        self.market = market
 
-        # Agent states
+        self.config = config
         self.agent_mask: List[str] = [agent[CONFIG_AGENT_TYPE] for agent in self.config[CONFIG_AGENT]]
+        self.market = Market(config=self.config)
+        gov_agent_id = self.agent_mask.index(CONFIG_AGENT_TYPE_GOVERNANCE)
+        self.lending_protocol = LendingProtocol(owner=gov_agent_id, market=self.market, config=self.config)
+
+        # Agent balances
         self.agent_balance: List[Dict] = [
             {
                 token_name: agent_dict.get(CONFIG_AGENT_BALANCE, {}).get(token_name, 0)
@@ -49,10 +47,10 @@ class MultiAgentEnv(gym.Env):
 
         # Interact with lending_protocol
         agent_observation_space = [AGENT_OBSERVATION_SPACE(len(self.lending_protocol.plf_pools)) for _ in self.agent_mask]
-        lending_protocol.set_agent_balance(self.agent_balance)
+        self.lending_protocol.set_agent_balance(self.agent_balance)
 
         # Gym Attributes
-        self.observation_space = combine_observation_space([lending_protocol, market], obs_spaces=agent_observation_space)
+        self.observation_space = combine_observation_space([self.lending_protocol, self.market], obs_spaces=agent_observation_space)
         self.action_encoding = encode_action(len(self.lending_protocol.plf_pools))
         self.action_space = spaces.Tuple([spaces.Discrete(len(self.action_encoding[agent_type])) for agent_type in self.agent_mask])
 

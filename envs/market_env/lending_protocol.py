@@ -17,10 +17,9 @@ from envs.market_env.constants import (
     CONFIG_AGENT,
     CONFIG_AGENT_TYPE,
     LP_BORROW_SAFETY_MARGIN,
-    LP_DEPOSIT_AMOUNT,
     LP_LIQUIDATION_PENALTY,
     LP_OBSERVATION_SPACE,
-    LP_DEFAULT_HEALTH_FACTOR,
+    LP_DEFAULT_HEALTH_FACTOR, PLF_FEE,
 )
 
 
@@ -36,9 +35,11 @@ class LendingProtocol:
 
     def __init__(
         self,
+        owner: int,
         market: Market,
         config: Dict,
     ):
+        self.owner = owner
         self.market = market
         self.config = config
 
@@ -82,8 +83,8 @@ class LendingProtocol:
         self.reward = torch.zeros(len(self.agent_mask))
 
         # Reset all the records
-        self.borrow_record = dict()
         self.supply_record = dict()
+        self.borrow_record = dict()
         self.worst_loans = {i: self._update_health_factor(i) for i in range(len(self.plf_pools))}
 
         # Return the state of the pool alongside the remaining return values
@@ -94,7 +95,6 @@ class LendingProtocol:
         ])
 
         return torch.cat(state)
-
 
     def step(self, action=None) -> Tuple[ObsType, torch.Tensor, List[bool], dict]:
         # 1) Update all plf_pools based on the actions of the agents
@@ -139,7 +139,7 @@ class LendingProtocol:
         if len(loan_in_pool) == 0:
             return None
         # Compute health_factor for all loans
-        unpacked_pool_loans = [(*k, loans) for k in loan_in_pool for loans in self.borrow_record[k]]
+        unpacked_pool_loans = [(*k, loans) for k in loan_in_pool for loans, _ in self.borrow_record[k]]
         if len(unpacked_pool_loans) == 0:
             return None
         health_factors = list(map(lambda x: self._get_health_factor(*x[1:]), unpacked_pool_loans))
@@ -168,7 +168,7 @@ class LendingProtocol:
         deposit_hash = uuid.uuid4().hex
         if self.supply_record.get((agent_id, pool_to)) is None:
             self.supply_record[agent_id, pool_to] = list()
-        self.supply_record[agent_id, pool_to].append(deposit_hash)
+        self.supply_record[agent_id, pool_to].append((deposit_hash, amount))
 
         # 3) Add the funds to the pool
         self.plf_pools[pool_to].add_supply(key=deposit_hash, amount=amount)
@@ -190,13 +190,15 @@ class LendingProtocol:
             return 0, False
 
         # 2) Get the hash value of the supply
-        withdraw_hash = self.supply_record.get((agent_id, pool_from)).pop()
+        withdraw_hash, initial_amount = self.supply_record.get((agent_id, pool_from)).pop()
 
         # 3) Remove the funds from the pool
         withdraw_amount = self.plf_pools[pool_from].remove_supply(withdraw_hash)
 
-        # 4) Add the funds to the agents balance
-        self.agent_balance[agent_id][pool_token] += withdraw_amount
+        # 4) Add the funds to the agent's and protocol owner's balance
+        fee = (withdraw_amount - initial_amount) * PLF_FEE
+        self.agent_balance[self.owner][pool_token] += fee
+        self.agent_balance[agent_id][pool_token] += (withdraw_amount - fee)
 
         return 0.0, True
 
@@ -208,17 +210,17 @@ class LendingProtocol:
         :param agent_id: ID of agent who tries to borrow
         :param pool_collateral: PLFPool, to which the collateral will be deposited
         :param pool_loan: PLFPool, from which the funds are borrowed
-        :amount: Amount of funds that are being deposited
+        :param amount: Amount of funds that are being deposited
         """
         # 1) Compute the deposit and borrow amount
-        deposit_amount = LP_DEPOSIT_AMOUNT
+        deposit_amount = amount
         deposit_price = self.plf_pools[pool_collateral].get_token_price()
         borrow_price = self.plf_pools[pool_loan].get_token_price()
         l_t = self.plf_pools[pool_loan].get_collateral_factor() - LP_BORROW_SAFETY_MARGIN
         borrow_amount = (deposit_amount * deposit_price * l_t) / borrow_price
 
         # 2) Deduct the collateral from the agent first
-        reward, success = self._remove_agent_funds(agent_id, pool_collateral, amount)
+        reward, success = self._remove_agent_funds(agent_id, pool_collateral, deposit_amount)
         # Agent doesn't have enough funds
         if not success:
             logging.info(
@@ -231,7 +233,7 @@ class LendingProtocol:
         loan_hash = uuid.uuid4().hex
         if self.borrow_record.get((agent_id, pool_collateral, pool_loan)) is None:
             self.borrow_record[agent_id, pool_collateral, pool_loan] = list()
-        self.borrow_record[agent_id, pool_collateral, pool_loan].append(loan_hash)
+        self.borrow_record[agent_id, pool_collateral, pool_loan].append((loan_hash, deposit_amount))
 
         # 4) Deposit the collateral (2nd transaction for step 2)
         self.plf_pools[pool_collateral].add_supply(key=loan_hash, amount=deposit_amount)
@@ -260,7 +262,7 @@ class LendingProtocol:
             return 0, False
 
         # 2) Retrieve the loan hash
-        loan_hash = self.borrow_record[(agent_id, pool_collateral, pool_loan)][0]
+        loan_hash, initial_amount = self.borrow_record[(agent_id, pool_collateral, pool_loan)][0]
 
         # 3) Agent pays the borrowed funds
         borrowed_amount = self.plf_pools[pool_loan].return_borrow(loan_hash)
@@ -274,10 +276,13 @@ class LendingProtocol:
             )
             return 0, False
 
-        # 4) Transfer the collateral back to the agent
+        # 4) Transfer the collateral back to the agent and pay fee to owner
         collateral_token = self.plf_pools[pool_collateral].get_token_name()
         collateral_amount = self.plf_pools[pool_collateral].remove_supply(loan_hash)
-        self.agent_balance[agent_id][collateral_token] += collateral_amount
+
+        fee = (collateral_amount - initial_amount) * PLF_FEE
+        self.agent_balance[self.owner][collateral_token] += fee
+        self.agent_balance[agent_id][collateral_token] += (collateral_amount - fee)
 
         # 5) Remove the borrow record
         self.borrow_record[(agent_id, pool_collateral, pool_loan)].pop(0)
