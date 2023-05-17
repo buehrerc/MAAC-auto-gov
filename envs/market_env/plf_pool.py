@@ -32,7 +32,6 @@ class PLFPool:
         # General Properties
         self.token_name = token_name
         self.token = market.get_token(self.token_name)
-        self.agent_list = None
 
         # Pool Parameters
         self.collateral_factor: float = collateral_factor

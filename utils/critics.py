@@ -145,7 +145,7 @@ class AttentionCritic(nn.Module):
             # CBUE MODIFICATION: Changed dimension of sum
             # head_entropies = [(-((probs + 1e-8).log() * probs).squeeze().sum(1)
             #                    .mean()) for probs in all_attend_probs[i]]
-            head_entropies = [(-((probs + 1e-8).log() * probs).squeeze().sum()
+            head_entropies = [(-((probs + 1e-8).log() * probs).squeeze().sum(-1)
                                .mean()) for probs in all_attend_probs[i]]
             agent_rets = []
             critic_in = torch.cat((s_encodings[i], *other_all_values[i]), dim=1)
