@@ -18,11 +18,11 @@ from utils.buffer import ReplayBuffer
 from tensorboardX import SummaryWriter
 
 
-def init_logger(config):
+def init_logger(log_dir):
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s:[%(levelname)s] >> {%(module)s}: %(message)s",
-        handlers=[logging.FileHandler("./log/debug.log"), logging.StreamHandler()],
+        handlers=[logging.FileHandler(os.path.join(log_dir, "/debug.log")), logging.StreamHandler()],
     )
 
 
@@ -143,8 +143,9 @@ def train(
 
 
 def run(env_config, config):
-    init_logger(env_config)
     logger, run_num, run_dir, log_dir = init_params(config)
+    init_logger(log_dir)
+
     # env = make_parallel_env(env_config, config.n_rollout_threads, run_num)
     # obsp, acsp = env.get_spaces()
     # agents = make_agent(env_config, obsp, acsp)
