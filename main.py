@@ -10,7 +10,8 @@ from pathlib import Path
 
 from algorithms.custom_attention_sac import CustomAttentionSAC
 from utils.make_agent import make_agent
-from utils.env_wrappers import SubprocVecEnv, DummyVecEnv
+from utils.env_wrappers import DummyVecEnv
+from utils.custom_wrappers import CustomWrapper
 from algorithms.attention_sac import AttentionSAC
 from envs.market_env.env import MultiAgentEnv
 from utils.buffer import ReplayBuffer
@@ -54,27 +55,20 @@ def init_env(env_config):
     return env
 
 
-def init_agent(env_config, env):
-    logging.info("Start Agent Initialization")
-    agents = make_agent(env_config, env.observation_space, env.action_space)
-    logging.info("Finished Agent Initialization")
-    return agents
-
-
 def make_parallel_env(env_config, n_rollout_threads, seed):
     def get_env_fn(rank):
         def init_env_():
-            env = make_env(env_config)
+            env = MultiAgentEnv(env_config)
             return env
         return init_env_
     if n_rollout_threads == 1:
         return DummyVecEnv([get_env_fn(0)])
     else:
-        return SubprocVecEnv([get_env_fn(i) for i in range(n_rollout_threads)])
+        return CustomWrapper([get_env_fn(i) for i in range(n_rollout_threads)])
 
 
 def train(
-    env: MultiAgentEnv,
+    env: CustomWrapper,
     model: AttentionSAC,
     replay_buffer: ReplayBuffer,
     logger: SummaryWriter,
@@ -91,8 +85,8 @@ def train(
 
         for et_i in range(config.episode_length):
             # rearrange observations to be per agent, and convert to torch Variable
-            # CBUE MODIFICATION: added a transform and replaced obs[:, i] with obs
-            torch_obs = [Variable(torch.Tensor(np.vstack(obs)).T,
+            # CBUE MODIFICATION: replaced obs[:, i] with obs, since all agents have the same observation space
+            torch_obs = [Variable(torch.Tensor(np.vstack(obs)),
                                   requires_grad=False)
                          for i in range(model.nagents)]
             # get actions as torch Variables
@@ -103,17 +97,16 @@ def train(
             # CBUE MODIFICATION: different mapping of the actions.
             # rearrange actions to be per environment
             # actions = [[ac[i] for ac in agent_actions] for i in range(config.n_rollout_threads)]
-            actions = [np.where(ac[0] == 1)[0][0] for ac in agent_actions]
+            actions = [[np.where(ac[i] == 1)[0][0] for ac in agent_actions] for i in range(config.n_rollout_threads)]
             next_obs, rewards, dones, infos = env.step(actions)
 
             # CBUE MODIFICATION: Reshape the obs to comply with the replay_buffer convention
             # Has to do with the fact that the initial pipeline was using multiple environments to train in parallel
             # => Introduction of such a feature at a later stage of the project
-            obs = obs.repeat(model.nagents, 1).unsqueeze(0)
-            transformed_next_obs = next_obs.repeat(model.nagents, 1).unsqueeze(0)
-            rewards = rewards.unsqueeze(0)
-            dones = np.array([dones])
-            replay_buffer.push(obs, agent_actions, rewards, transformed_next_obs, dones)
+            # TODO: Reshape obs and next_obs correctly
+            # obs = obs.repeat(model.nagents, 1).unsqueeze(0)
+            # transformed_next_obs = next_obs.repeat(model.nagents, 1).unsqueeze(0)
+            replay_buffer.push(obs, agent_actions, rewards, next_obs, dones)
             obs = next_obs
             t += config.n_rollout_threads
             if (len(replay_buffer) >= config.batch_size and
@@ -146,12 +139,10 @@ def run(env_config, config):
     logger, run_num, run_dir, log_dir = init_params(config)
     init_logger(log_dir)
 
-    # env = make_parallel_env(env_config, config.n_rollout_threads, run_num)
-    # obsp, acsp = env.get_spaces()
-    # agents = make_agent(env_config, obsp, acsp)
-    # env.set_agent(agents)
-    env = init_env(env_config)
-    agents = init_agent(env_config, env)
+    env = make_parallel_env(env_config, config.n_rollout_threads, run_num)
+    # env = init_env(env_config)
+    obsp, acsp = env.get_spaces()
+    agents = make_agent(env_config, obsp, acsp)
 
     model = CustomAttentionSAC(
         env=env,
@@ -182,7 +173,8 @@ def run(env_config, config):
 def dev(env_config):
     init_logger('./log')
     env = init_env(env_config)
-    agents = init_agent(env_config, env)
+    obsp, acsp = env.observation_space, env.action_space
+    agents = make_agent(env_config, obsp, acsp)
 
     actions = [(0, 1), (0, 2), (0, 4), (0, 12), (0, 4), (0, 3)]
 
@@ -223,5 +215,5 @@ if __name__ == '__main__':
     config_ = parser.parse_args()
     fs = open(config_.config)
     env_config_ = json.load(fs)
-    # run(env_config_, config_)
-    dev(env_config_)
+    run(env_config_, config_)
+    # dev(env_config_)

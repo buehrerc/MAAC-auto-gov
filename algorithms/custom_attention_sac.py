@@ -1,8 +1,7 @@
 from typing import List
 
 from algorithms.attention_sac import AttentionSAC
-from envs.market_env.env import MultiAgentEnv
-from utils.custom_agents import CustomAgent
+from utils.agents import AttentionAgent
 
 
 class CustomAttentionSAC(AttentionSAC):
@@ -11,8 +10,8 @@ class CustomAttentionSAC(AttentionSAC):
     """
     def __init__(
         self,
-        env: MultiAgentEnv,
-        agents: List[CustomAgent],
+        env,
+        agents: List[AttentionAgent],
         gamma: float = 0.95,
         tau: float = 0.01,
         pi_lr: float = 0.01,
