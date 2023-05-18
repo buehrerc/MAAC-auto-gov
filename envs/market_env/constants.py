@@ -78,3 +78,7 @@ TOKEN_OBSERVATION_SPACE = spaces.Box(
 AGENT_OBSERVATION_SPACE = lambda num_plf_pools: spaces.Box(low=np.array([-np.inf]*num_plf_pools),
                                                            high=np.array([np.inf]*num_plf_pools),
                                                            dtype=np.float32)
+
+# 5) Reward Function Constants
+REWARD_ILLEGAL_ACTION = -10000
+

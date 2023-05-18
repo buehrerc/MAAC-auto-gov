@@ -52,13 +52,12 @@ class Market:
     def _initialize_token(param):
         return Token(**param)
 
-    def update(self) -> Tuple[ObsType, torch.Tensor, bool, dict]:
+    def update(self) -> ObsType:
         """
         Updates all prices of the asset token within the market
         :return: None
         """
-        state = torch.cat([token.update_price() for token in self.tokens.values()])
-        return state, torch.Tensor([]), False, dict()
+        return torch.cat([token.update() for token in self.tokens.values()])
 
     def get_prices(self) -> Dict[str, float]:
         return dict([(name, token.get_price()) for name, token in self.tokens.items()])
@@ -132,7 +131,7 @@ class Token:
     def get_price_history(self):
         return self.price_history
 
-    def update_price(self) -> torch.Tensor:
+    def update(self) -> torch.Tensor:
         # Asset price adheres geometric Brownian motion with zero drift
         new_price = self.price * np.exp(self.asset_volatility * self.rng.normal(0, 1))
         assert new_price > 0, "asset price cannot be negative."

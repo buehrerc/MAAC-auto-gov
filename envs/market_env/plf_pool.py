@@ -40,7 +40,7 @@ class PLFPool:
         self.borrow_token: Dict[str, float] = dict()
 
         # Reward Parameters
-        self.previous_reserve: float = 0.0
+        self.previous_reserve_value: float = 0.0
 
         self.rb_factor = rb_factor
         self.spread = spread
@@ -89,6 +89,9 @@ class PLFPool:
     def _get_daily_interest(interest: float) -> float:
         return (1 + interest) ** (1 / 365)
 
+    def get_revenue(self) -> float:
+        return self.reserve * self.get_token_price() - self.previous_reserve_value
+
     def get_state(self) -> torch.Tensor:
         """
         Function returns the following state:
@@ -132,7 +135,7 @@ class PLFPool:
         :return: state
         """
         self.accrue_interest()
-        self.previous_reserve = self.reserve
+        self.previous_reserve_value = self.reserve * self.get_token_price()
         return self.get_state()
 
     def accrue_interest(self) -> None:
@@ -150,19 +153,19 @@ class PLFPool:
 # =====================================================================================================================
 #   POOL ACTIONS
 # =====================================================================================================================
-    def update_collateral_factor(self, direction: int) -> (float, bool):
+    def update_collateral_factor(self, direction: int) -> bool:
         """
         Update the collateral factor of the pool by increasing or decreasing by a constante rate
         :param direction: -1=decrease, +1=incrase
-        :return: reward, success
+
+        :return: True: illegal_action, False: legal_action
         """
         new_col_fac = self.collateral_factor + direction * self.col_factor_change_rate
         if not 0 < new_col_fac < 1:
-            # TODO: Punish actor for this action by giving him a penalty!
             # And do not update the collateral_factor
-            return 0.0, False
+            return True
         self.collateral_factor = new_col_fac
-        return 0.0, True
+        return False
 
     def add_supply(self, key: str, amount: float) -> None:
         logging.debug(f"Supply of {amount} was added to pool '{self.token_name}'")

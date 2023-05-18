@@ -132,7 +132,6 @@ def run(env_config, config):
     init_logger(log_dir)
 
     env = make_parallel_env(env_config, config.n_rollout_threads, run_num)
-    # env = init_env(env_config)
     obsp, acsp = env.get_spaces()
     agents = make_agent(env_config, obsp, acsp)
 
@@ -207,5 +206,5 @@ if __name__ == '__main__':
     config_ = parser.parse_args()
     fs = open(config_.config)
     env_config_ = json.load(fs)
-    run(env_config_, config_)
-    # dev(env_config_)
+    # run(env_config_, config_)
+    dev(env_config_)

@@ -96,13 +96,13 @@ class LendingProtocol:
 
         return torch.cat(state)
 
-    def update(self) -> Tuple[ObsType, torch.Tensor, List[bool], dict]:
+    def update(self) -> ObsType:
         """
         Function updates the lending protocol's state.
         1) Updates all pools
         2) Updates the loan records
         3) Computes the rewards
-        :return: new_observations, reward_vector, dones, infos
+        :return: new_observations
         """
         # 1) Update all plf_pools based on the actions of the agents
         pool_states = [pool.update() for pool in self.plf_pools]
@@ -115,18 +115,7 @@ class LendingProtocol:
             for v in self.worst_loans.values()
         ])
 
-        # 3) Reset the reward
-        last_reward = self.reward
-        # TODO: Define the reward
-        # self.reward = torch.zeros(len(self.agent_mask))
-        self.reward = torch.ones(len(self.agent_mask))
-
-        return (
-            torch.cat(pool_states),          # Observation State
-            last_reward,                     # Reward
-            [False] * len(self.agent_mask),  # Terminated
-            dict()                           # Info
-        )
+        return torch.cat(pool_states)
 
     def _get_health_factor(self, pool_collateral: int, pool_loan: int, loan_hash: str) -> float:
         """
@@ -162,27 +151,29 @@ class LendingProtocol:
 # =====================================================================================================================
 #   AGENT ACTIONS
 # =====================================================================================================================
-    def update_collateral_factor(self, pool_id: int, direction: int) -> (float, bool):
+    def update_collateral_factor(self, pool_id: int, direction: int) -> bool:
         """
         Function updates the collateral factor of the corresponding plf_pool
         :param pool_id: id of the plf_pool whose collateral factor is to be updated
         :param direction: -1=decrease, +1=increase
+
+        :return: True: illegal_action, False: legal_action
         """
         return self.plf_pools[pool_id].update_collateral_factor(direction)
 
-    def deposit(self, agent_id: int, pool_to: int, amount: float) -> (float, bool):
+    def deposit(self, agent_id: int, pool_to: int, amount: float) -> bool:
         """
         Function deposits funds into the corresponding plf_pool
         :param agent_id: id of agent who wants to deposit funds
         :param pool_to: id of pool to which funds are deposited
         :param amount: amount of funds which are to be deposited
 
-        :return: reward, success
+        :return: True: illegal_action, False: legal_action
         """
         # 1) Deduct the funds from the agents balance
-        reward, success = self._remove_agent_funds(agent_id, pool_to, amount)
-        if not success:  # Agent doesn't have enough funds
-            return reward, success
+        feedback = self._remove_agent_funds(agent_id, pool_to, amount)
+        if feedback:  # Agent doesn't have enough funds -> illegal action
+            return feedback
 
         # 2) Record the deposit
         deposit_hash = uuid.uuid4().hex
@@ -193,18 +184,16 @@ class LendingProtocol:
         # 3) Add the funds to the pool
         self.plf_pools[pool_to].add_supply(key=deposit_hash, amount=amount)
 
-        # 4) Assign reward
-        # TODO: Assign reward
-        return 0, True
+        return False
 
-    def withdraw(self, agent_id: int, pool_from: int, amount: float) -> (float, bool):
+    def withdraw(self, agent_id: int, pool_from: int, amount: float) -> bool:
         """
         Function withdraws funds from the corresponding plf_pool
         :param agent_id: id of agent who wants to withdraw funds
         :param pool_from: id of pool from which funds are withdrawn
         :param amount: amount of funds which are to be withdrawn
 
-        :return: reward, success
+        :return: True: illegal_action, False: legal_action
         """
         pool_token = self.plf_pools[pool_from].get_token_name()
 
@@ -214,8 +203,7 @@ class LendingProtocol:
                 f"Agent {agent_id} tried to withdraw {amount} from {pool_token}, "
                 f"but didn't deposit enough or didn't deposit at all."
             )
-            # TODO: Reward -> negative reward
-            return 0, False
+            return True
 
         # 2) Get the hash value of the supply
         withdraw_hash, initial_amount = self.supply_record.get((agent_id, pool_from)).pop()
@@ -228,7 +216,7 @@ class LendingProtocol:
         self.agent_balance[self.owner][pool_token] += fee
         self.agent_balance[agent_id][pool_token] += (withdraw_amount - fee)
 
-        return 0.0, True
+        return False
 
     def borrow(self, agent_id: int, pool_collateral: int, pool_loan: int, amount: float) -> (float, bool):
         """
@@ -240,7 +228,7 @@ class LendingProtocol:
         :param pool_loan: PLFPool, from which the funds are borrowed
         :param amount: Amount of funds that are being deposited
 
-        :return: reward, success
+        :return: True: illegal_action, False: legal_action
         """
         # 1) Compute the deposit and borrow amount
         deposit_amount = amount
@@ -250,14 +238,14 @@ class LendingProtocol:
         borrow_amount = (deposit_amount * deposit_price * l_t) / borrow_price
 
         # 2) Deduct the collateral from the agent first
-        reward, success = self._remove_agent_funds(agent_id, pool_collateral, deposit_amount)
+        feedback = self._remove_agent_funds(agent_id, pool_collateral, deposit_amount)
         # Agent doesn't have enough funds
-        if not success:
+        if feedback:
             logging.info(
                 f"Agent {agent_id} tried to borrow funds from pool {pool_loan} by "
                 f"providing collateral to pool {pool_collateral}, but didn't have enough funds."
             )
-            return reward, success
+            return feedback
 
         # 3) Record the borrow
         loan_hash = uuid.uuid4().hex
@@ -273,16 +261,16 @@ class LendingProtocol:
         self.agent_balance[agent_id][borrow_token] += borrow_amount
         self.plf_pools[pool_loan].start_borrow(key=loan_hash, amount=borrow_amount)
 
-        return 0, True
+        return False
 
-    def repay(self, agent_id: int, pool_loan: int, pool_collateral: int, amount: float) -> (float, bool):
+    def repay(self, agent_id: int, pool_loan: int, pool_collateral: int, amount: float) -> bool:
         """
         :param agent_id: ID of agent who tries to repay the loan
         :param pool_loan: PLFPool, to which loan is repaid
         :param pool_collateral: PLFPool, from which the collateral is repaid
         :param amount: Amount of funds that are being deposited
 
-        :return: reward, success
+        :return: True: illegal_action, False: legal_action
         """
         # 1) Check whether an according borrow exists
         if self.borrow_record.get((agent_id, pool_collateral, pool_loan)) is None or \
@@ -290,23 +278,22 @@ class LendingProtocol:
             logging.info(
                 f"Agent {agent_id} tried to repay a loan, but never borrowed funds from pool {pool_loan}."
             )
-            # TODO: Reward -> negative reward
-            return 0, False
+            return True
 
         # 2) Retrieve the loan hash
         loan_hash, initial_amount = self.borrow_record[(agent_id, pool_collateral, pool_loan)][0]
 
         # 3) Agent pays the borrowed funds
         borrowed_amount = self.plf_pools[pool_loan].return_borrow(loan_hash)
-        reward, success = self._remove_agent_funds(agent_id, pool_loan, borrowed_amount)
-        if not success:
+        feedback = self._remove_agent_funds(agent_id, pool_loan, borrowed_amount)
+        if feedback:
             # Agent cannot repay the borrowed funds -> reset the borrowed funds in the pool
             self.plf_pools[pool_loan].start_borrow(loan_hash, borrowed_amount)
             logging.info(
                 f"Agent {agent_id} tried to repay the loan from pool {pool_loan}, "
                 f"but didn't have enough funds."
             )
-            return 0, False
+            return True
 
         # 4) Transfer the collateral back to the agent and pay fee to owner
         collateral_token = self.plf_pools[pool_collateral].get_token_name()
@@ -318,16 +305,17 @@ class LendingProtocol:
 
         # 5) Remove the borrow record
         self.borrow_record[(agent_id, pool_collateral, pool_loan)].pop(0)
-        return 0, True
 
-    def liquidate(self, agent_id: int, pool_id: int) -> (float, bool):
+        return False
+
+    def liquidate(self, agent_id: int, pool_id: int) -> bool:
         """
         Function liquidates the unhealthiest loan in the corresponding plf_pool.
 
         :param agent_id: id of agent who wants to liquidate a loan
         :param pool_id: id of pool which is meant to be liquidated
 
-        :return: reward, success
+        :return: True: illegal_action, False: legal_action
         """
         # 1) Check whether there are any loans, which could be liquidated
         pool_loans_keys = list(filter(lambda x: x[2] == pool_id, self.borrow_record.keys()))
@@ -336,7 +324,7 @@ class LendingProtocol:
 
         # 2) Check whether the loans have unhealthy loans
         if self.worst_loans.get(pool_id) is None:
-            return 0, False
+            return True
 
         borrow_key, loan_hash, health_factor = self.worst_loans.get(pool_id)
         if health_factor > 1:
@@ -344,18 +332,18 @@ class LendingProtocol:
                 f"Agent {agent_id} tried to liquidate a loan from pool {pool_id},"
                 f" however the loan has a good health factor: {health_factor}"
             )
-            return 0, False
+            return True
         # 3) Repay the loan funds
         liquidated_agent_id, pool_collateral, pool_loan = borrow_key
         loan_amount = self.plf_pools[pool_loan].get_borrow(loan_hash)
         # Remove funds from the agent
-        reward, success = self._remove_agent_funds(agent_id, pool_loan, loan_amount)
-        if not success:
+        feedback = self._remove_agent_funds(agent_id, pool_loan, loan_amount)
+        if feedback:
             logging.info(
                 f"Agent {agent_id} tried to liquidate pool {pool_loan} by paying {loan_amount},"
                 f"however it didn't have enough funds."
             )
-            return 0.0, False
+            return True
         # Add the funds to the pool
         self.plf_pools[pool_loan].return_borrow(loan_hash)
 
@@ -380,9 +368,12 @@ class LendingProtocol:
         # 5) Remove the loan from the borrow_record
         self.borrow_record[borrow_key].pop(self.borrow_record[borrow_key].index(loan_hash))
 
-        return 0.0, True
+        return False
 
-    def _remove_agent_funds(self, agent_id: int, pool_to: int, amount: float):
+    def _remove_agent_funds(self, agent_id: int, pool_to: int, amount: float) -> bool:
+        """
+        :return: True: illegal_action, False: legal_action
+        """
         pool_token = self.plf_pools[pool_to].get_token_name()
         agent_balance = self.agent_balance[agent_id].get(pool_token)
         if agent_balance < amount:
@@ -390,10 +381,9 @@ class LendingProtocol:
                 f"Agent {agent_id} tried to deposit {amount} into {pool_token},"
                 f" but didn't have enough funds ({agent_balance})"
             )
-            # TODO: Reward -> negative reward
-            return 0, False
+            return True
         self.agent_balance[agent_id][pool_token] -= amount
-        return 0, True
+        return False
 
     def __repr__(self):
         return "LendingProtocol(" + repr(self.plf_pools) + ")"
