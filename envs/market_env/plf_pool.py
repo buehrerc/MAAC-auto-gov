@@ -90,6 +90,17 @@ class PLFPool:
         return (1 + interest) ** (1 / 365)
 
     def get_state(self) -> torch.Tensor:
+        """
+        Function returns the following state:
+        - Total amount of supply tokens
+        - Total amount of borrow tokens
+        - Reserve of the pool
+        - Utillization ratio of the pool
+        - Collateral factor of the pool
+        - Supply interest rate of the pool
+        - Borrow interest rate of the pool
+        :return: torch.Tensor of the states
+        """
         return torch.Tensor([
             self.total_supply_token,    # Supply Token
             self.total_borrow_token,    # Borrow Token
@@ -115,9 +126,10 @@ class PLFPool:
 # =====================================================================================================================
 #   UPDATE POOL
 # =====================================================================================================================
-    def step(self) -> ObsType:
+    def update(self) -> ObsType:
         """
         Function is being used to update the pool internal parameters
+        :return: state
         """
         self.accrue_interest()
         self.previous_reserve = self.reserve
@@ -139,6 +151,11 @@ class PLFPool:
 #   POOL ACTIONS
 # =====================================================================================================================
     def update_collateral_factor(self, direction: int) -> (float, bool):
+        """
+        Update the collateral factor of the pool by increasing or decreasing by a constante rate
+        :param direction: -1=decrease, +1=incrase
+        :return: reward, success
+        """
         new_col_fac = self.collateral_factor + direction * self.col_factor_change_rate
         if not 0 < new_col_fac < 1:
             # TODO: Punish actor for this action by giving him a penalty!

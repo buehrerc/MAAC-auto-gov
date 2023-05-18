@@ -66,7 +66,7 @@ class LendingProtocol:
     def reset(self) -> ObsType:
         """
         Resets the LendingProtocol and all its plf pools to the initial parameters by reinitializing the PLFPools
-        :return: Tuple[ObsType, torch.Tensor, bool, bool, dict]
+        :return: new_observation
         """
         # (Re-)Initialize the plf pools
         self.plf_pools = list(
@@ -96,9 +96,16 @@ class LendingProtocol:
 
         return torch.cat(state)
 
-    def step(self, action=None) -> Tuple[ObsType, torch.Tensor, List[bool], dict]:
+    def update(self) -> Tuple[ObsType, torch.Tensor, List[bool], dict]:
+        """
+        Function updates the lending protocol's state.
+        1) Updates all pools
+        2) Updates the loan records
+        3) Computes the rewards
+        :return: new_observations, reward_vector, dones, infos
+        """
         # 1) Update all plf_pools based on the actions of the agents
-        pool_states = [pool.step() for pool in self.plf_pools]
+        pool_states = [pool.update() for pool in self.plf_pools]
 
         # 2) Compute the lowest health factor for each plf_pool
         self.worst_loans = {i: self._update_health_factor(i) for i in range(len(self.plf_pools))}
@@ -156,9 +163,22 @@ class LendingProtocol:
 #   AGENT ACTIONS
 # =====================================================================================================================
     def update_collateral_factor(self, pool_id: int, direction: int) -> (float, bool):
+        """
+        Function updates the collateral factor of the corresponding plf_pool
+        :param pool_id: id of the plf_pool whose collateral factor is to be updated
+        :param direction: -1=decrease, +1=increase
+        """
         return self.plf_pools[pool_id].update_collateral_factor(direction)
 
     def deposit(self, agent_id: int, pool_to: int, amount: float) -> (float, bool):
+        """
+        Function deposits funds into the corresponding plf_pool
+        :param agent_id: id of agent who wants to deposit funds
+        :param pool_to: id of pool to which funds are deposited
+        :param amount: amount of funds which are to be deposited
+
+        :return: reward, success
+        """
         # 1) Deduct the funds from the agents balance
         reward, success = self._remove_agent_funds(agent_id, pool_to, amount)
         if not success:  # Agent doesn't have enough funds
@@ -178,6 +198,14 @@ class LendingProtocol:
         return 0, True
 
     def withdraw(self, agent_id: int, pool_from: int, amount: float) -> (float, bool):
+        """
+        Function withdraws funds from the corresponding plf_pool
+        :param agent_id: id of agent who wants to withdraw funds
+        :param pool_from: id of pool from which funds are withdrawn
+        :param amount: amount of funds which are to be withdrawn
+
+        :return: reward, success
+        """
         pool_token = self.plf_pools[pool_from].get_token_name()
 
         # 1) Check whether the user has deposited anything into the pool
@@ -211,6 +239,8 @@ class LendingProtocol:
         :param pool_collateral: PLFPool, to which the collateral will be deposited
         :param pool_loan: PLFPool, from which the funds are borrowed
         :param amount: Amount of funds that are being deposited
+
+        :return: reward, success
         """
         # 1) Compute the deposit and borrow amount
         deposit_amount = amount
@@ -250,7 +280,9 @@ class LendingProtocol:
         :param agent_id: ID of agent who tries to repay the loan
         :param pool_loan: PLFPool, to which loan is repaid
         :param pool_collateral: PLFPool, from which the collateral is repaid
-        :amount: Amount of funds that are being deposited
+        :param amount: Amount of funds that are being deposited
+
+        :return: reward, success
         """
         # 1) Check whether an according borrow exists
         if self.borrow_record.get((agent_id, pool_collateral, pool_loan)) is None or \
@@ -289,6 +321,14 @@ class LendingProtocol:
         return 0, True
 
     def liquidate(self, agent_id: int, pool_id: int) -> (float, bool):
+        """
+        Function liquidates the unhealthiest loan in the corresponding plf_pool.
+
+        :param agent_id: id of agent who wants to liquidate a loan
+        :param pool_id: id of pool which is meant to be liquidated
+
+        :return: reward, success
+        """
         # 1) Check whether there are any loans, which could be liquidated
         pool_loans_keys = list(filter(lambda x: x[2] == pool_id, self.borrow_record.keys()))
         if len(pool_loans_keys) == 0:

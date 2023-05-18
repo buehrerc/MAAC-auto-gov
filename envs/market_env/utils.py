@@ -1,6 +1,5 @@
 from typing import List, Dict, Tuple
 import numpy as np
-import gym
 from gym import spaces
 
 from envs.market_env.constants import (

@@ -52,10 +52,9 @@ class Market:
     def _initialize_token(param):
         return Token(**param)
 
-    def step(self, action: ActType) -> Tuple[ObsType, torch.Tensor, bool, dict]:
+    def update(self) -> Tuple[ObsType, torch.Tensor, bool, dict]:
         """
         Updates all prices of the asset token within the market
-        :param action: Unused parameter
         :return: None
         """
         state = torch.cat([token.update_price() for token in self.tokens.values()])

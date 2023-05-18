@@ -35,9 +35,9 @@ def worker(remote, parent_remote, env_fn_wrapper):
 
 
 class CustomWrapper(SubprocVecEnv):
-    def __init__(self, env_fns, spaces=None):
+    def __init__(self, env_fns):
         """
-        envs: list of gym environments to run in subprocesses
+        :param env_fns: list of gym environments to run in subprocesses
         """
         self.waiting = False
         self.closed = False
@@ -62,21 +62,33 @@ class CustomWrapper(SubprocVecEnv):
         return self.remotes[0].recv()
 
 
-class CustomDummyWrapper:
+class CustomDummyWrapper(VecEnv):
+    """
+    Wrapper reshapes the in- and outputs to comply with the general learning pipeline.
+    """
     def __init__(self, env_fn):
         self.env = env_fn()
         self.observation_space = self.env.observation_space
         self.action_space = self.env.action_space
+        self.actions = None
+        super().__init__(1, self.observation_space, self.action_space)
 
-    def step(self, action: ActType) -> Tuple[ObsType, torch.Tensor, np.array, Dict]:
+    def step_async(self, actions):
+        self.actions = actions
+
+    def step_wait(self) -> Tuple[ObsType, torch.Tensor, np.array, Dict]:
         # Unwrap action
-        action_unwrapped = action[0]
+        action_unwrapped = self.actions[0]
         obs, reward, done, log = self.env.step(action_unwrapped)
         # Wrap all results
         return obs.unsqueeze(0), reward.unsqueeze(0), np.array([done]), log
 
+    def get_spaces(self) -> Tuple:
+        return self.observation_space, self.action_space
+
     def reset(self) -> ObsType:
         return self.env.reset().unsqueeze(0)
 
-    def get_spaces(self) -> Tuple:
-        return self.observation_space, self.action_space
+    def close(self):
+        pass
+

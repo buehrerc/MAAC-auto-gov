@@ -69,14 +69,14 @@ class MultiAgentEnv(gym.Env):
         """
         Step first applies actions of the agents to the LendingPool. Afterwards, the Market gets updated.
         :param action: Action of the users
-        :return: new abservations, rewards, done, logs
+        :return: new observations, rewards, done, logs
         """
         # Set the action of each agent first:
         initial_reward = self._set_action(action)
 
         # Update the whole environment based on the actions of the agents
-        lp_state, reward, terminated, lp_logs = self.lending_protocol.step(action)
-        market_state, _, _, market_logs = self.market.step(None)
+        lp_state, reward, terminated, lp_logs = self.lending_protocol.update()
+        market_state, _, _, market_logs = self.market.update()
         agent_state = self._get_agent_state()
         state = torch.cat([lp_state, market_state, agent_state])
 
