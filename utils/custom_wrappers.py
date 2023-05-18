@@ -1,3 +1,9 @@
+from typing import Tuple, Dict
+
+import torch
+import numpy as np
+from gym.core import ActType, ObsType
+
 from utils.env_wrappers import SubprocVecEnv
 from multiprocessing import Process, Pipe
 from baselines.common.vec_env import VecEnv, CloudpickleWrapper
@@ -54,3 +60,23 @@ class CustomWrapper(SubprocVecEnv):
     def get_spaces(self):
         self.remotes[0].send(('get_spaces', None))
         return self.remotes[0].recv()
+
+
+class CustomDummyWrapper:
+    def __init__(self, env_fn):
+        self.env = env_fn()
+        self.observation_space = self.env.observation_space
+        self.action_space = self.env.action_space
+
+    def step(self, action: ActType) -> Tuple[ObsType, torch.Tensor, np.array, Dict]:
+        # Unwrap action
+        action_unwrapped = action[0]
+        obs, reward, done, log = self.env.step(action_unwrapped)
+        # Wrap all results
+        return obs.unsqueeze(0), reward.unsqueeze(0), np.array([done]), log
+
+    def reset(self) -> ObsType:
+        return self.env.reset().unsqueeze(0)
+
+    def get_spaces(self) -> Tuple:
+        return self.observation_space, self.action_space
