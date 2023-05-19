@@ -18,7 +18,7 @@ from tensorboardX import SummaryWriter
 
 def init_logger(log_dir):
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.DEBUG,
         format="%(asctime)s:[%(levelname)s] >> {%(module)s}: %(message)s",
         handlers=[logging.FileHandler(os.path.join(log_dir, "debug.log")), logging.StreamHandler()],
     )

@@ -2,36 +2,38 @@
   "market": {
     "token": [
       {
-        "name": "testToken", 
-        "price": 42.0,
+        "name": "TKN",
+        "price": 3.0,
+        "asset_volatility": 2
+      },
+      {
+        "name": "USDC",
+        "price": 0.1,
         "asset_volatility": 0.1
       },
       {
-        "name": "anotherToken",
-        "price": 69.0,
-        "asset_volatility": 0.2
-      },
-      {
-        "name": "yetAnotherToken",
-        "price": 100.0,
-        "asset_volatility": 0.05
+        "name": "WETH",
+        "price": 1.0,
+        "asset_volatility": 0.0
       }
     ]
   },
   "lending_protocol": {
     "plf_pool": [
       {
-        "token_name": "testToken",
-        "initial_starting_funds": 100,
+        "token_name": "TKN",
+        "initial_starting_funds": 5000,
         "collateral_factor": 0.85
       },
       {
-        "token_name": "anotherToken",
-        "initial_starting_funds": 100,
+        "token_name": "USDC",
+        "initial_starting_funds": 150000,
         "collateral_factor": 0.85
       },
       {
-        "token_name": "yetAnotherToken"
+        "token_name": "WETH",
+        "initial_starting_funds": 15000,
+        "collateral_factor": 0.85
       }
     ]
   },
@@ -45,13 +47,11 @@
       "name": "UserAgent",
       "type": "user",
       "balance": {
-          "testToken": 1000,
-          "anotherToken": 1500
+          "TKN": 1000,
+          "USDC": 5000,
+          "WETH": 1000
       },
       "reward": "maximum_exposure"
     }
-  ],
-  "trainer": {
-    "lr": 0.01
-  }
+  ]
 }
