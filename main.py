@@ -19,7 +19,7 @@ from tensorboardX import SummaryWriter
 
 def init_logger(log_dir):
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=logging.INFO,
         format="%(asctime)s:[%(levelname)s] >> {%(module)s}: %(message)s",
         handlers=[logging.FileHandler(os.path.join(log_dir, "debug.log")), logging.StreamHandler()],
     )
@@ -170,7 +170,7 @@ def dev(env_config):
     actions = [(0, 1), (0, 2), (0, 4), (0, 12), (0, 4), (0, 3)]
 
     for i, a in enumerate(actions):
-        logging.info(f"Start Round {i} ===============================================================================")
+        logging.debug(f"Start Round {i} ===============================================================================")
         # state, reward, _, _ = env.step(action=env.action_space.sample())
         state, reward, _, _ = env.step(action=a)
         logging.debug(f"Environment:: environment_state={state}, reward={reward}")

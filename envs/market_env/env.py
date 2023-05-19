@@ -137,13 +137,13 @@ class MultiAgentEnv(gym.Env):
         """
         action_id, pool_id = self.action_encoding[CONFIG_AGENT_TYPE_GOVERNANCE][int(action)]
         if action_id == 0:  # No Action
-            logging.info("Agent {}: No action".format(agent_id, pool_id))
+            logging.debug("Agent {}: No action".format(agent_id, pool_id))
             return False
         elif action_id == 1:  # Lower Collateral Factor
-            logging.info("Agent {}: Lower collateral factor of pool {}".format(agent_id, pool_id))
+            logging.debug("Agent {}: Lower collateral factor of pool {}".format(agent_id, pool_id))
             return self.lending_protocol.update_collateral_factor(pool_id, -1)
         elif action_id == 2:  # Raise Collteral Factor
-            logging.info("Agent {}: Raise collateral factor of pool {}".format(agent_id, pool_id))
+            logging.debug("Agent {}: Raise collateral factor of pool {}".format(agent_id, pool_id))
             return self.lending_protocol.update_collateral_factor(pool_id, 1)
         else:
             raise NotImplementedError("Action Code {} is unknown".format(action_id))
@@ -166,27 +166,27 @@ class MultiAgentEnv(gym.Env):
         action_id, idx_from, idx_to = self.action_encoding[CONFIG_AGENT_TYPE_USER][int(action)]
 
         if action_id == 0:  # no action
-            logging.info("Agent {}: No action".format(agent_id))
+            logging.debug("Agent {}: No action".format(agent_id))
             return False
 
         elif action_id == 1:  # deposit
-            logging.info("Agent {}: Deposit {} funds into pool {}".format(agent_id, PLF_STEP_SIZE, idx_to))
+            logging.debug("Agent {}: Deposit {} funds into pool {}".format(agent_id, PLF_STEP_SIZE, idx_to))
             return self.lending_protocol.deposit(agent_id, idx_to, PLF_STEP_SIZE)
 
         elif action_id == 2:  # withdraw
-            logging.info("Agent {}: Withdraw {} funds in pool {}".format(agent_id, PLF_STEP_SIZE, idx_to))
+            logging.debug("Agent {}: Withdraw {} funds in pool {}".format(agent_id, PLF_STEP_SIZE, idx_to))
             return self.lending_protocol.withdraw(agent_id, idx_to, PLF_STEP_SIZE)
 
         elif action_id == 3:  # borrow
-            logging.info("Agent {}: Borrow funds from {} & collateral to {}".format(agent_id, idx_from, idx_to))
+            logging.debug("Agent {}: Borrow funds from {} & collateral to {}".format(agent_id, idx_from, idx_to))
             return self.lending_protocol.borrow(agent_id, idx_to, idx_from, PLF_STEP_SIZE)
 
         elif action_id == 4:  # repay
-            logging.info("Agent {}: Repay funds to {} & receive collateral form {}".format(agent_id, idx_to, idx_from))
+            logging.debug("Agent {}: Repay funds to {} & receive collateral form {}".format(agent_id, idx_to, idx_from))
             return self.lending_protocol.repay(agent_id, idx_to, idx_from, PLF_STEP_SIZE)
 
         elif action_id == 5:  # liquidate
-            logging.info("Agent {}: Liquidate pool {}".format(agent_id, idx_to))
+            logging.debug("Agent {}: Liquidate pool {}".format(agent_id, idx_to))
             return self.lending_protocol.liquidate(agent_id, idx_to)
 
         else:

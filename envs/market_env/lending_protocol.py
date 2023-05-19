@@ -199,7 +199,7 @@ class LendingProtocol:
 
         # 1) Check whether the user has deposited anything into the pool
         if self.supply_record.get((agent_id, pool_from)) is None or len(self.supply_record.get((agent_id, pool_from))) == 0:
-            logging.info(
+            logging.debug(
                 f"Agent {agent_id} tried to withdraw {amount} from {pool_token}, "
                 f"but didn't deposit enough or didn't deposit at all."
             )
@@ -241,7 +241,7 @@ class LendingProtocol:
         feedback = self._remove_agent_funds(agent_id, pool_collateral, deposit_amount)
         # Agent doesn't have enough funds
         if feedback:
-            logging.info(
+            logging.debug(
                 f"Agent {agent_id} tried to borrow funds from pool {pool_loan} by "
                 f"providing collateral to pool {pool_collateral}, but didn't have enough funds."
             )
@@ -275,7 +275,7 @@ class LendingProtocol:
         # 1) Check whether an according borrow exists
         if self.borrow_record.get((agent_id, pool_collateral, pool_loan)) is None or \
                 len(self.borrow_record.get((agent_id, pool_collateral, pool_loan))) == 0:
-            logging.info(
+            logging.debug(
                 f"Agent {agent_id} tried to repay a loan, but never borrowed funds from pool {pool_loan}."
             )
             return True
@@ -289,7 +289,7 @@ class LendingProtocol:
         if feedback:
             # Agent cannot repay the borrowed funds -> reset the borrowed funds in the pool
             self.plf_pools[pool_loan].start_borrow(loan_hash, borrowed_amount)
-            logging.info(
+            logging.debug(
                 f"Agent {agent_id} tried to repay the loan from pool {pool_loan}, "
                 f"but didn't have enough funds."
             )
@@ -320,7 +320,7 @@ class LendingProtocol:
         # 1) Check whether there are any loans, which could be liquidated
         pool_loans_keys = list(filter(lambda x: x[2] == pool_id, self.borrow_record.keys()))
         if len(pool_loans_keys) == 0:
-            logging.info(f"Agent {agent_id} tried to liquidate pool {pool_id}, but there is no loan in this pool.")
+            logging.debug(f"Agent {agent_id} tried to liquidate pool {pool_id}, but there is no loan in this pool.")
 
         # 2) Check whether the loans have unhealthy loans
         if self.worst_loans.get(pool_id) is None:
@@ -328,7 +328,7 @@ class LendingProtocol:
 
         borrow_key, loan_hash, health_factor = self.worst_loans.get(pool_id)
         if health_factor > 1:
-            logging.info(
+            logging.debug(
                 f"Agent {agent_id} tried to liquidate a loan from pool {pool_id},"
                 f" however the loan has a good health factor: {health_factor}"
             )
@@ -339,7 +339,7 @@ class LendingProtocol:
         # Remove funds from the agent
         feedback = self._remove_agent_funds(agent_id, pool_loan, loan_amount)
         if feedback:
-            logging.info(
+            logging.debug(
                 f"Agent {agent_id} tried to liquidate pool {pool_loan} by paying {loan_amount},"
                 f"however it didn't have enough funds."
             )
@@ -359,7 +359,7 @@ class LendingProtocol:
         remaining_amount = (collateral_value - loan_plus_penalty) / self.plf_pools[pool_collateral].get_token_price()
         self.agent_balance[agent_id][collateral_token] += liquidator_amount
         self.agent_balance[liquidated_agent_id][collateral_token] += remaining_amount
-        logging.info(
+        logging.debug(
             f"Pool {pool_id} was liquidated, liquidator paid {loan_amount} "
             f"and received {liquidator_amount}. The remaining {remaining_amount} "
             f"were transfered to Agent {liquidated_agent_id}"
@@ -377,7 +377,7 @@ class LendingProtocol:
         pool_token = self.plf_pools[pool_to].get_token_name()
         agent_balance = self.agent_balance[agent_id].get(pool_token)
         if agent_balance < amount:
-            logging.info(
+            logging.debug(
                 f"Agent {agent_id} tried to deposit {amount} into {pool_token},"
                 f" but didn't have enough funds ({agent_balance})"
             )
