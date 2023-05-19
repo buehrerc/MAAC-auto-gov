@@ -7,7 +7,6 @@ import numpy as np
 from torch.autograd import Variable
 from gym.spaces import Box
 from pathlib import Path
-
 from algorithms.custom_attention_sac import CustomAttentionSAC
 from utils.make_agent import make_agent
 from utils.custom_wrappers import CustomWrapper, CustomDummyWrapper
@@ -161,23 +160,6 @@ def run(env_config, config):
     logger.close()
 
 
-def dev(env_config):
-    init_logger('./log')
-    env = init_env(env_config)
-    obsp, acsp = env.observation_space, env.action_space
-    agents = make_agent(env_config, obsp, acsp)
-
-    actions = [(0, 1), (0, 2), (0, 4), (0, 12), (0, 4), (0, 3)]
-
-    for i, a in enumerate(actions):
-        logging.debug(f"Start Round {i} ===============================================================================")
-        # state, reward, _, _ = env.step(action=env.action_space.sample())
-        state, reward, _, _ = env.step(action=a)
-        logging.debug(f"Environment:: environment_state={state}, reward={reward}")
-
-    logging.info("Finished")
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("model_name", help="Name of directory to store model/training contents")
@@ -206,5 +188,4 @@ if __name__ == '__main__':
     config_ = parser.parse_args()
     fs = open(config_.config)
     env_config_ = json.load(fs)
-    # run(env_config_, config_)
-    dev(env_config_)
+    run(env_config_, config_)
