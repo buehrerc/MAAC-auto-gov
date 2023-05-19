@@ -38,7 +38,8 @@
   "agent": [
     {
       "name": "GovAgent",
-      "type": "governance"
+      "type": "governance",
+      "reward": "protocol_revenue"
     },
     {
       "name": "UserAgent",
@@ -46,7 +47,8 @@
       "balance": {
           "testToken": 1000,
           "anotherToken": 1500
-      }
+      },
+      "reward": "maximum_exposure"
     }
   ],
   "trainer": {

@@ -14,6 +14,7 @@ from envs.market_env.constants import (
     CONFIG_AGENT_TYPE_GOVERNANCE,
     CONFIG_AGENT_TYPE_USER,
     CONFIG_AGENT_BALANCE,
+    CONFIG_AGENT_REWARD,
     PLF_STEP_SIZE,
     AGENT_OBSERVATION_SPACE,
 )
@@ -31,6 +32,7 @@ class MultiAgentEnv(gym.Env):
 
         self.config = config
         self.agent_mask: List[str] = [agent[CONFIG_AGENT_TYPE] for agent in self.config[CONFIG_AGENT]]
+        self.agent_reward: List[str] = [agent[CONFIG_AGENT_REWARD] for agent in self.config[CONFIG_AGENT]]
         self.market = Market(config=self.config)
         self.lending_protocol = LendingProtocol(owner=self.agent_mask.index(CONFIG_AGENT_TYPE_GOVERNANCE),
                                                 market=self.market, config=self.config)
@@ -94,8 +96,8 @@ class MultiAgentEnv(gym.Env):
 
         # 3) Collect the rewards for all
         reward = torch.Tensor([
-            reward_function(agent_type, self.lending_protocol, feedback)
-            for agent_type, feedback in zip(self.agent_mask, action_feedback)
+            reward_function(i, args[0], self.lending_protocol, args[1])
+            for i, args in enumerate(zip(self.agent_reward, action_feedback))
         ])
 
         return (

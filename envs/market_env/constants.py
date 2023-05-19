@@ -11,6 +11,7 @@ CONFIG_AGENT_TYPE = "type"
 CONFIG_AGENT_TYPE_GOVERNANCE = "governance"
 CONFIG_AGENT_TYPE_USER = "user"
 CONFIG_AGENT_BALANCE = "balance"
+CONFIG_AGENT_REWARD = "reward"
 
 # 2) ACTION ENCODING
 ACTION_USER_DEPOSIT = "deposit"
@@ -81,4 +82,6 @@ AGENT_OBSERVATION_SPACE = lambda num_plf_pools: spaces.Box(low=np.array([-np.inf
 
 # 5) Reward Function Constants
 REWARD_ILLEGAL_ACTION = -10000
+REWARD_TYPE_PROTOCOL_REVENUE = "protocol_revenue"
+REWARD_TYPE_MAXIMUM_EXPOSURE = "maximum_exposure"
 

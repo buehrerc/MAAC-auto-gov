@@ -23,11 +23,6 @@ from envs.market_env.constants import (
 )
 
 
-class InvalidTransaction(Exception):
-    def __init__(self, message):
-        super().__init__(message)
-
-
 class LendingProtocol:
     """
     Class implements an AAVE-like over-collateralized lending protocol.
