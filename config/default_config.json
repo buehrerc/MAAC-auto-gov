@@ -41,17 +41,23 @@
     {
       "name": "GovAgent",
       "type": "governance",
-      "reward": "protocol_revenue"
+      "reward": "protocol_revenue",
+      "lr": 0.01,
+      "hidden_dim": 64,
+      "onehot_dim": 0
     },
     {
       "name": "UserAgent",
       "type": "user",
+      "reward": "maximum_exposure",
+      "lr": 0.01,
+      "hidden_dim": 64,
+      "onehot_dim": 0,
       "balance": {
-          "TKN": 1000,
-          "USDC": 5000,
-          "WETH": 1000
-      },
-      "reward": "maximum_exposure"
+        "TKN": 1000,
+        "USDC": 5000,
+        "WETH": 1000
+      }
     }
   ]
 }

@@ -163,7 +163,7 @@ def run(env_config, config):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("model_name", help="Name of directory to store model/training contents")
-    parser.add_argument("--config", default="./config/config_template.json")
+    parser.add_argument("--config", default="./config/default_config.json")
     parser.add_argument("--n_rollout_threads", default=12, type=int)
     parser.add_argument("--buffer_length", default=int(1e6), type=int)
     parser.add_argument("--n_episodes", default=50000, type=int)
