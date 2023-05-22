@@ -76,10 +76,13 @@ class ReplayBuffer(object):
         else:
             cast = lambda x: Variable(Tensor(x), requires_grad=False)
         if norm_rews:
-            ret_rews = [cast((self.rew_buffs[i][inds] -
-                              self.rew_buffs[i][:self.filled_i].mean()) /
-                             self.rew_buffs[i][:self.filled_i].std())
-                        for i in range(self.num_agents)]
+            # CBUE MODIFICATION:
+            # Account for zero division
+            ret_rews = list()
+            for i in range(self.num_agents):
+                nom = self.rew_buffs[i][inds] - self.rew_buffs[i][:self.filled_i].mean()
+                denom = self.rew_buffs[i][:self.filled_i].std()
+                ret_rews.append(cast(np.divide(nom, denom, out=np.zeros_like(nom), where=denom != 0)))
         else:
             ret_rews = [cast(self.rew_buffs[i][inds]) for i in range(self.num_agents)]
         return ([cast(self.obs_buffs[i][inds]) for i in range(self.num_agents)],
