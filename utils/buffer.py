@@ -54,8 +54,12 @@ class ReplayBuffer(object):
             self.curr_i = 0
             self.filled_i = self.max_steps
         for agent_i in range(self.num_agents):
+            # CBUE MODIFICATION
+            # observation for the same for all agents
+            # self.obs_buffs[agent_i][self.curr_i:self.curr_i + nentries] = np.vstack(
+            #     observations[:, agent_i])
             self.obs_buffs[agent_i][self.curr_i:self.curr_i + nentries] = np.vstack(
-                observations[:, agent_i])
+                observations)
             # actions are already batched by agent, so they are indexed differently
             self.ac_buffs[agent_i][self.curr_i:self.curr_i + nentries] = actions[agent_i]
             self.rew_buffs[agent_i][self.curr_i:self.curr_i + nentries] = rewards[:, agent_i]

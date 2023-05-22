@@ -361,7 +361,7 @@ class LendingProtocol:
          )
 
         # 5) Remove the loan from the borrow_record
-        self.borrow_record[borrow_key].pop(self.borrow_record[borrow_key].index(loan_hash))
+        self.borrow_record[borrow_key].pop(list(map(lambda x: x[0], self.borrow_record[borrow_key])).index(loan_hash))
 
         return False
 

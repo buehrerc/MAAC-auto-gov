@@ -49,7 +49,6 @@ def init_env(env_config):
     env = MultiAgentEnv(env_config)
     logging.info("Finished Environment Initialization")
     logging.info(f"Gym Parameters:: observation_space={env.observation_space.shape}, action_space={env.action_space}")
-    env.reset()
     return env
 
 
@@ -75,9 +74,9 @@ def train(
 ):
     t = 0
     for ep_i in range(0, config.n_episodes, config.n_rollout_threads):
-        print("Episodes %i-%i of %i" % (ep_i + 1,
-                                        ep_i + 1 + config.n_rollout_threads,
-                                        config.n_episodes))
+        logging.info("Episodes %i-%i of %i" % (ep_i + 1,
+                                               ep_i + 1 + config.n_rollout_threads,
+                                               config.n_episodes))
         obs = env.reset()
         model.prep_rollouts(device='cpu')
 
@@ -102,6 +101,9 @@ def train(
             t += config.n_rollout_threads
             if (len(replay_buffer) >= config.batch_size and
                     (t % config.steps_per_update) < config.n_rollout_threads):
+                logging.info(f"Average Reward: {np.array(replay_buffer.rew_buffs).mean(axis=1).tolist()}")
+                logging.info(f"Action Buffer: {replay_buffer.ac_buffs[0].sum(0)}")
+                logging.info(f"Action Buffer: {replay_buffer.ac_buffs[1].sum(0)}")
                 if config.use_gpu:
                     model.prep_training(device='gpu')
                 else:
