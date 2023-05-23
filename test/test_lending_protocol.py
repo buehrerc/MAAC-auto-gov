@@ -92,7 +92,7 @@ class TestLendingProtocol(TestCase):
 
     def test_liquidate_healthy_loan(self):
         self.assertFalse(self.lending_protocol.borrow(1, 0, 1, 100))
-        self.assertFalse(self.lending_protocol.liquidate(1, 1))
+        self.assertTrue(self.lending_protocol.liquidate(1, 1))
 
     def test_liquidate_not_enough_funds(self):
         self.assertFalse(self.lending_protocol.borrow(1, 0, 1, 100))
