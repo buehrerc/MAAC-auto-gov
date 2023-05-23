@@ -79,3 +79,25 @@ class TestLendingProtocol(TestCase):
         self.lending_protocol.agent_balance[1]['USDC'] = 0
         self.assertTrue(self.lending_protocol.repay(1, 1, 0, 100))
 
+    def test_liquidate(self):
+        self.assertFalse(self.lending_protocol.borrow(1, 0, 1, 100))
+        # Hack market price to offset health factor of the loan
+        self.lending_protocol.plf_pools[0].token.price = 1e-5
+        self.env.step((0, 0))
+
+        self.assertFalse(self.lending_protocol.liquidate(1, 1))
+
+    def test_liquidate_no_loan(self):
+        self.assertTrue(self.lending_protocol.liquidate(1, 0))
+
+    def test_liquidate_healthy_loan(self):
+        self.assertFalse(self.lending_protocol.borrow(1, 0, 1, 100))
+        self.assertFalse(self.lending_protocol.liquidate(1, 1))
+
+    def test_liquidate_not_enough_funds(self):
+        self.assertFalse(self.lending_protocol.borrow(1, 0, 1, 100))
+        # Hack the agent's balance + make the loan unhealthy
+        self.lending_protocol.agent_balance[1]['USDC'] = 0
+        self.lending_protocol.plf_pools[0].token.price = 1
+        self.env.step((0, 0))
+        self.assertTrue(self.lending_protocol.liquidate(1, 1))
