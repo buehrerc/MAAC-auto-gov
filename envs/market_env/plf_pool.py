@@ -23,7 +23,6 @@ class PLFPool:
         col_factor_change_rate: float = PLF_COLLATERAL_FACTOR_CHANGE_RATE,
         rb_factor: float = PLF_RB_FACTOR,
         spread: float = PLF_SPREAD,
-        seed: int = 0
     ):
         assert 0 < collateral_factor < 1, "Collateral Factor must be between 0 and 1"
         # Gym Atributes
@@ -44,10 +43,6 @@ class PLFPool:
 
         self.rb_factor = rb_factor
         self.spread = spread
-
-        # Randomness
-        self.seed = seed
-        self.rng = np.random.RandomState(self.seed)
 
     @property
     def total_supply_token(self) -> float:

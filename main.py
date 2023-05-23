@@ -4,6 +4,7 @@ import json
 import argparse
 import torch
 import numpy as np
+import random
 from torch.autograd import Variable
 from gym.spaces import Box
 from pathlib import Path
@@ -25,6 +26,7 @@ def init_logger(log_dir):
 
 
 def init_params(config):
+    # Initialize directory for logs and model
     model_dir = Path('./models') / config.model_name
     if not model_dir.exists():
         run_num = 1
@@ -40,13 +42,20 @@ def init_params(config):
     run_dir = model_dir / curr_run
     log_dir = run_dir / 'logs'
     os.makedirs(log_dir)
+
+    # Logger
     logger = SummaryWriter(str(log_dir))
+
+    # Fix randomness
+    torch.manual_seed(config.seed)
+    random.seed(config.seed)
+
     return logger, run_num, run_dir, log_dir
 
 
-def init_env(env_config):
+def init_env(env_config, seed):
     logging.info("Start Environment Initialization")
-    env = MultiAgentEnv(env_config)
+    env = MultiAgentEnv(env_config, seed)
     logging.info("Finished Environment Initialization")
     logging.info(f"Gym Parameters:: observation_space={env.observation_space.shape}, action_space={env.action_space}")
     return env
@@ -55,7 +64,7 @@ def init_env(env_config):
 def make_parallel_env(env_config, n_rollout_threads, seed):
     def get_env_fn(rank):
         def init_env_():
-            env = MultiAgentEnv(env_config)
+            env = MultiAgentEnv(env_config, seed+rank)
             return env
         return init_env_
     if n_rollout_threads == 1:
@@ -132,7 +141,7 @@ def run(env_config, config):
     logger, run_num, run_dir, log_dir = init_params(config)
     init_logger(log_dir)
 
-    env = make_parallel_env(env_config, config.n_rollout_threads, run_num)
+    env = make_parallel_env(env_config, config.n_rollout_threads, config.seed)
     obsp, acsp = env.get_spaces()
     agents = make_agent(env_config, obsp, acsp)
 
@@ -186,6 +195,7 @@ if __name__ == '__main__':
     parser.add_argument("--gamma", default=0.99, type=float)
     parser.add_argument("--reward_scale", default=100., type=float)
     parser.add_argument("--use_gpu", action='store_true')
+    parser.add_argument("--seed", default=42, type=int)
 
     config_ = parser.parse_args()
     fs = open(config_.config)

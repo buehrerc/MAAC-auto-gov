@@ -20,11 +20,13 @@ class Market:
     """
     def __init__(
         self,
-        config: Dict
+        config: Dict,
+        seed: int,
     ):
         self.market_config = config[CONFIG_MARKET]
         self.tokens: Dict[str, Token] = dict()
         self.observation_space: spaces.Space = spaces.Space()
+        self.seed = seed
         self.reset()
 
     def reset(self) -> ObsType:
@@ -48,9 +50,8 @@ class Market:
     def _get_state(self) -> ObsType:
         return torch.cat([token.get_state() for token in self.tokens.values()])
 
-    @staticmethod
-    def _initialize_token(param):
-        return Token(**param)
+    def _initialize_token(self, param):
+        return Token(seed=self.seed, **param)
 
     def update(self) -> ObsType:
         """

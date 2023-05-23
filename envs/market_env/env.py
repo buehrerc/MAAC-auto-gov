@@ -24,6 +24,7 @@ class MultiAgentEnv(gym.Env):
     def __init__(
         self,
         config: Dict,
+        seed: int,
     ) -> None:
         """
         :param config: Environment Configs
@@ -31,9 +32,13 @@ class MultiAgentEnv(gym.Env):
         super(MultiAgentEnv).__init__()
 
         self.config = config
+
+        # Agent Parameters
         self.agent_mask: List[str] = [agent[CONFIG_AGENT_TYPE] for agent in self.config[CONFIG_AGENT]]
         self.agent_reward: List[str] = [agent[CONFIG_AGENT_REWARD] for agent in self.config[CONFIG_AGENT]]
-        self.market = Market(config=self.config)
+
+        # Environment Attributes
+        self.market = Market(config=self.config, seed=seed)
         self.lending_protocol = LendingProtocol(owner=self.agent_mask.index(CONFIG_AGENT_TYPE_GOVERNANCE),
                                                 market=self.market, config=self.config)
 
@@ -62,6 +67,10 @@ class MultiAgentEnv(gym.Env):
         return state
 
     def _initialize_agent_balance(self) -> List[Dict]:
+        """
+        Function generates a dictionary for each agent.
+        Within each dictionary, all tokens of the market have a balance.
+        """
         agent_balance = [
             {
                 token_name: agent_dict.get(CONFIG_AGENT_BALANCE, {}).get(token_name, 0)
