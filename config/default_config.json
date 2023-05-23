@@ -61,6 +61,14 @@
     }
   ],
   "params": {
-
+    "n_rollout_threads": 4,
+    "buffer_length": 4096,
+    "episode_length": 128,
+    "batch_size": 1024,
+    "save_interval": 1000,
+    "attend_heads": 4,
+    "pi_lr": 0.01,
+    "q_lr": 0.01,
+    "reward_scale": 1e-3,
   }
 }

@@ -13,6 +13,7 @@ from utils.make_agent import make_agent
 from utils.custom_wrappers import CustomWrapper, CustomDummyWrapper
 from algorithms.attention_sac import AttentionSAC
 from envs.market_env.env import MultiAgentEnv
+from envs.market_env.constants import CONFIG_PARAM
 from utils.buffer import ReplayBuffer
 from tensorboardX import SummaryWriter
 
@@ -137,7 +138,7 @@ def train(
             model.save(run_dir / 'model.pt')
 
 
-def run(env_config, config):
+def run(config, env_config):
     logger, run_num, run_dir, log_dir = init_params(config)
     init_logger(log_dir)
 
@@ -171,6 +172,16 @@ def run(env_config, config):
     logger.close()
 
 
+def get_env_config(config):
+    fs = open(config.config)
+    env_config = json.load(fs)
+    fs.close()
+    # Overwrite config with json params
+    for key, value in env_config[CONFIG_PARAM].items():
+        setattr(config, key, value)
+    return config, env_config
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("model_name", help="Name of directory to store model/training contents")
@@ -198,6 +209,5 @@ if __name__ == '__main__':
     parser.add_argument("--seed", default=42, type=int)
 
     config_ = parser.parse_args()
-    fs = open(config_.config)
-    env_config_ = json.load(fs)
-    run(env_config_, config_)
+    config_, env_config_ = get_env_config(config_)
+    run(config_, env_config_)
