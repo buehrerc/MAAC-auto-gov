@@ -2,6 +2,13 @@ import json
 from unittest import TestCase
 
 from envs.market_env.env import MultiAgentEnv
+from envs.market_env.constants import (
+    PLF_INTEREST_CHANGE_RATE,
+    PLF_COLLATERAL_FACTOR_CHANGE_RATE,
+    PLF_STABLE_BORROW_SLOPE_1,
+    PLF_STABLE_BORROW_SLOPE_2,
+
+)
 
 CONFIG_FILE_PATH = r"./test_config/config_test.json"
 
@@ -12,7 +19,7 @@ class TestLendingProtocol(TestCase):
         self.config = json.load(fs)
         fs.close()
 
-        self.env = MultiAgentEnv(config=self.config)
+        self.env = MultiAgentEnv(config=self.config, seed=0)
         self.env.reset()
         self.lending_protocol = self.env.lending_protocol
 
@@ -23,12 +30,24 @@ class TestLendingProtocol(TestCase):
         self.assertEqual(len(self.lending_protocol.borrow_record), 0)
 
     def test_increase_collateral(self):
+        initial_collateral_factor = self.lending_protocol.plf_pools[0].get_collateral_factor()
         self.assertFalse(self.lending_protocol.update_collateral_factor(0, 1))
-        self.assertEqual(self.lending_protocol.plf_pools[0].get_collateral_factor(), 0.875)
+        self.assertEqual(self.lending_protocol.plf_pools[0].get_collateral_factor(), initial_collateral_factor + PLF_COLLATERAL_FACTOR_CHANGE_RATE)
 
     def test_decrease_collateral(self):
+        initial_collateral_factor = self.lending_protocol.plf_pools[0].get_collateral_factor()
         self.assertFalse(self.lending_protocol.update_collateral_factor(0, -1))
-        self.assertEqual(self.lending_protocol.plf_pools[0].get_collateral_factor(), 0.825)
+        self.assertEqual(self.lending_protocol.plf_pools[0].get_collateral_factor(), initial_collateral_factor - PLF_COLLATERAL_FACTOR_CHANGE_RATE)
+
+    def test_increase_interest_rate_slope(self):
+        self.assertFalse(self.lending_protocol.update_interest_model(0, 1, 1))
+        self.assertEqual(self.lending_protocol.plf_pools[0].stable_borrow_slope_1, PLF_STABLE_BORROW_SLOPE_1 + PLF_INTEREST_CHANGE_RATE)
+        self.assertEqual(self.lending_protocol.plf_pools[0].stable_borrow_slope_2, PLF_STABLE_BORROW_SLOPE_2 + PLF_INTEREST_CHANGE_RATE)
+
+    def test_decrease_interest_rate_slope(self):
+        self.assertFalse(self.lending_protocol.update_interest_model(0, -1, -1))
+        self.assertEqual(self.lending_protocol.plf_pools[0].stable_borrow_slope_1, PLF_STABLE_BORROW_SLOPE_1 - PLF_INTEREST_CHANGE_RATE)
+        self.assertEqual(self.lending_protocol.plf_pools[0].stable_borrow_slope_2, PLF_STABLE_BORROW_SLOPE_2 - PLF_INTEREST_CHANGE_RATE)
 
     def test_increase_collateral_unallowed(self):
         for i in range(5):

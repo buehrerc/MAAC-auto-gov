@@ -1,6 +1,5 @@
 import logging
 import torch
-import numpy as np
 from gym.core import ObsType
 from typing import Dict
 from envs.market_env.market import Market
@@ -10,6 +9,9 @@ from envs.market_env.constants import (
     PLF_RB_FACTOR,
     PLF_SPREAD,
     PLF_OBSERVATION_SPACE,
+    PLF_INTEREST_CHANGE_RATE,
+    PLF_OPTIMAL_UTILIZATION_RATIO, PLF_STABLE_BORROW_SLOPE_1, PLF_STABLE_BORROW_SLOPE_2,
+    PLF_BASE_BORROW_RATE, PLF_VARIABLE_BORROW_SLOPE_1, PLF_VARIABLE_BORROW_SLOPE_2,
 )
 
 
@@ -21,6 +23,7 @@ class PLFPool:
         initial_starting_funds: float = 1000,
         collateral_factor: float = 0.85,
         col_factor_change_rate: float = PLF_COLLATERAL_FACTOR_CHANGE_RATE,
+        interest_change_rate: float = PLF_INTEREST_CHANGE_RATE,
         rb_factor: float = PLF_RB_FACTOR,
         spread: float = PLF_SPREAD,
     ):
@@ -37,6 +40,15 @@ class PLFPool:
         self.col_factor_change_rate: float = col_factor_change_rate
         self.supply_token: Dict[str, float] = {PLF_INITIATOR: initial_starting_funds}
         self.borrow_token: Dict[str, float] = dict()
+
+        # Interest Rate Model
+        self.interest_change_rate = interest_change_rate
+        self.optimal_utilization_ratio: float = PLF_OPTIMAL_UTILIZATION_RATIO
+        self.base_borrow_rate: float = PLF_BASE_BORROW_RATE
+        self.stable_borrow_slope_1: float = PLF_STABLE_BORROW_SLOPE_1
+        self.stable_borrow_slope_2: float = PLF_STABLE_BORROW_SLOPE_2
+        # self.variable_borrow_slope_1: float = PLF_VARIABLE_BORROW_SLOPE_1
+        # self.variable_borrow_slope_2: float = PLF_VARIABLE_BORROW_SLOPE_2
 
         # Reward Parameters
         self.previous_reserve_value: float = 0.0
@@ -60,21 +72,44 @@ class PLFPool:
 
     @property
     def supply_interest_rate(self) -> float:
+        """
+        AAVE interest rate model
+        """
         assert self.utilization_ratio > -1e-9, "Utilization Ratio must be non-negative"
-        if self.utilization_ratio == 0:
-            return 0.0
         constrained_util_ratio = max(0, min(self.utilization_ratio, 0.97))
-        daily_borrow_interest = (1 + self.borrow_interest_rate) ** (1 / 365) - 1
-        daily_supply_interest = daily_borrow_interest * constrained_util_ratio
-        return ((1 + daily_supply_interest) ** 365 - 1) * (1 - self.spread)
+        return self.borrow_interest_rate * constrained_util_ratio * (1 - self.spread)
 
     @property
     def borrow_interest_rate(self) -> float:
+        """
+        AAVE interest rate model
+        For predictability, the stable interest rate model is being used
+        """
         assert self.utilization_ratio > -1e-9, "Utilization Ratio must be non-negative"
-        if self.utilization_ratio == 0:
-            return 0.0
-        constrained_util_ratio = max(0, min(self.utilization_ratio, 0.97))
-        return constrained_util_ratio / (self.rb_factor * (1 - constrained_util_ratio))
+        if self.utilization_ratio > self.optimal_utilization_ratio:
+            excess_utilization_ratio = (self.utilization_ratio - self.optimal_utilization_ratio) / (
+                        1 - self.optimal_utilization_ratio)
+            stable_borrow_interest_rate = (
+                    self.base_borrow_rate
+                    + self.stable_borrow_slope_1
+                    + self.stable_borrow_slope_2 * excess_utilization_ratio
+            )
+            # variable_borrow_interest_rate = (
+            #         self.base_borrow_rate
+            #         + self.variable_borrow_slope_1
+            #         + self.variable_borrow_slope_2 * excess_utilization_ratio
+            # )
+        else:
+            actual_to_optimal = self.utilization_ratio / self.optimal_utilization_ratio
+            stable_borrow_interest_rate = (
+                    self.base_borrow_rate
+                    + self.stable_borrow_slope_1 * actual_to_optimal
+            )
+            # variable_borrow_interest_rate = (
+            #         self.base_borrow_rate
+            #         + actual_to_optimal * self.variable_borrow_slope_1
+            # )
+        return stable_borrow_interest_rate
 
     @property
     def reserve(self) -> float:
@@ -151,7 +186,7 @@ class PLFPool:
     def update_collateral_factor(self, direction: int) -> bool:
         """
         Update the collateral factor of the pool by increasing or decreasing by a constante rate
-        :param direction: -1=decrease, +1=incrase
+        :param direction: -1=decrease, +1=increase
 
         :return: True: illegal_action, False: legal_action
         """
@@ -160,6 +195,20 @@ class PLFPool:
             # And do not update the collateral_factor
             return True
         self.collateral_factor = new_col_fac
+        return False
+
+    def update_interest_model(self, stable_borrow_slope_1: int = 0, stable_borrow_slope_2: int = 0) -> bool:
+        """
+        Update the parameters of the interest model.
+        :param stable_borrow_slope_1: -1=decrease, +1=increase
+        :param stable_borrow_slope_2: -1=decrease, +1=increase
+        """
+        for attr_name, direction in [("stable_borrow_slope_1", stable_borrow_slope_1), ("stable_borrow_slope_2", stable_borrow_slope_2)]:
+            new_slope = getattr(self, attr_name) + self.interest_change_rate * direction
+            if not 0 < new_slope < 1:
+                # And do not update the collateral_factor
+                return True
+            setattr(self, attr_name, new_slope)
         return False
 
     def add_supply(self, key: str, amount: float) -> None:

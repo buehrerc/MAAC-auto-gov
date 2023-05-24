@@ -156,6 +156,15 @@ class LendingProtocol:
         """
         return self.plf_pools[pool_id].update_collateral_factor(direction)
 
+    def update_interest_model(self, pool_id: int, stable_borrow_slope_1: int = 0, stable_borrow_slope_2: int = 0) -> bool:
+        """
+        Function updates the interest model's parameters.
+        For now, it's the two slopes of the stable borrow interest model
+
+        :return: True: illegal_action, False: legal_action
+        """
+        return self.plf_pools[pool_id].update_interest_model(stable_borrow_slope_1, stable_borrow_slope_2)
+
     def deposit(self, agent_id: int, pool_to: int, amount: float) -> bool:
         """
         Function deposits funds into the corresponding plf_pool

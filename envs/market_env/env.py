@@ -24,7 +24,7 @@ class MultiAgentEnv(gym.Env):
     def __init__(
         self,
         config: Dict,
-        seed: int,
+        seed: int = 0,
     ) -> None:
         """
         :param config: Environment Configs
@@ -150,12 +150,31 @@ class MultiAgentEnv(gym.Env):
         if action_id == 0:  # No Action
             logging.debug("Agent {}: No action".format(agent_id, pool_id))
             return False
+
         elif action_id == 1:  # Lower Collateral Factor
             logging.debug("Agent {}: Lower collateral factor of pool {}".format(agent_id, pool_id))
             return self.lending_protocol.update_collateral_factor(pool_id, -1)
+
         elif action_id == 2:  # Raise Collteral Factor
             logging.debug("Agent {}: Raise collateral factor of pool {}".format(agent_id, pool_id))
             return self.lending_protocol.update_collateral_factor(pool_id, 1)
+
+        elif action_id == 3:  # Lower Stable Borrow Slope 1
+            logging.debug("Agent {}: Lower stable borrow slope 1 of pool {}".format(agent_id, pool_id))
+            return self.lending_protocol.update_interest_model(pool_id, -1, 0)
+
+        elif action_id == 4:  # Raise Stable Borrow Slope 1
+            logging.debug("Agent {}: Raise stable borrow slope 1 of pool {}".format(agent_id, pool_id))
+            return self.lending_protocol.update_interest_model(pool_id, 1, 0)
+
+        elif action_id == 5:  # Lower Stable Borrow Slope 2
+            logging.debug("Agent {}: Lower stable borrow slope 2 of pool {}".format(agent_id, pool_id))
+            return self.lending_protocol.update_interest_model(pool_id, 0, -1)
+
+        elif action_id == 6:  # Raise Stable Borrow Slope 2
+            logging.debug("Agent {}: Raise stable borrow slope 2 of pool {}".format(agent_id, pool_id))
+            return self.lending_protocol.update_interest_model(pool_id, 0, 1)
+
         else:
             raise NotImplementedError("Action Code {} is unknown".format(action_id))
 

@@ -26,24 +26,34 @@ def encode_action(num_plf_pools) -> (spaces.Space, Dict):
     return encoding
 
 
-def encode_governance_action(num_plf_pols: int) -> Dict[int, Tuple]:
+def encode_governance_action(num_plf_pools: int) -> Dict[int, Tuple]:
     """
     ENCODING CONVENTIONS:
     > GOVERNANCE AGENT:
         0: no action
         1: lower collateral factor in 1st pool
         2: raise collateral factor in 1st pool
-        3: lower collateral factor in 2nd pool
-        4: raise collateral factor in 2nd pool
+        3: lower borrow slope_1 in 1st pool
+        4: raise borrow slope_1 in 1st pool
+        5: lower borrow slope_2 in 1st pool
+        6: raise borrow slope_2 in 1st pool
+        7: lower collateral factor in 2nd pool
+        8: raise collateral factor in 2nd pool
         etc.
+
+    > ACTION SPACE: 1 + num_plf_pool * 6
     """
     encoding = dict()
     i = 1
     encoding[0] = (0, None)
-    for n in range(num_plf_pols):
+    for n in range(num_plf_pools):
         encoding[i] = (1, n)
         encoding[i+1] = (2, n)
-        i += 2
+        encoding[i+2] = (3, n)
+        encoding[i+3] = (4, n)
+        encoding[i+4] = (5, n)
+        encoding[i+5] = (6, n)
+        i += 6
     return encoding
 
 
