@@ -1,0 +1,60 @@
+{
+  "market": {
+    "token": [
+      {
+        "name": "TKN",
+        "price": 3.0,
+        "asset_volatility": 1
+      },
+      {
+        "name": "USDC",
+        "price": 0.1,
+        "asset_volatility": 0.1
+      }
+    ]
+  },
+  "lending_protocol": {
+    "plf_pool": [
+      {
+        "token_name": "TKN",
+        "initial_starting_funds": 5000,
+        "collateral_factor": 0.85
+      },
+      {
+        "token_name": "USDC",
+        "initial_starting_funds": 150000,
+        "collateral_factor": 0.85
+      }
+    ]
+  },
+  "agent": [
+    {
+      "name": "GovAgent",
+      "type": "governance",
+      "reward": "protocol_revenue",
+      "lr": 0.01
+    },
+    {
+      "name": "UserAgent",
+      "type": "user",
+      "reward": "maximum_exposure",
+      "lr": 0.01,
+      "balance": {
+        "TKN": 1000,
+        "USDC": 5000
+      }
+    }
+  ],
+  "parameter": {
+    "n_rollout_threads": 4,
+    "buffer_length": 4096,
+    "n_episodes": 1000,
+    "episode_length": 128,
+    "batch_size": 1024,
+    "save_interval": 1000,
+    "attend_heads": 4,
+    "pi_lr": 0.01,
+    "q_lr": 0.01,
+    "reward_scale": 1e-3
+  }
+}
