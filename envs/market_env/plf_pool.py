@@ -141,7 +141,11 @@ class PLFPool:
             self.utilization_ratio,     # Utilization Ratio
             self.collateral_factor,     # Collateral Factor
             self.supply_interest_rate,  # Supply Interest Rate
-            self.borrow_interest_rate   # Borrow Interest Rate
+            self.borrow_interest_rate,  # Borrow Interest Rate
+            self.base_borrow_rate,      # Interest Model Base Rate
+            self.optimal_utilization_ratio, # Interest Model Optimal Utilization Ratio
+            self.stable_borrow_slope_1, # Interest Model Slope 1
+            self.stable_borrow_slope_2, # Interest Model Slope 2
         ])
 
 # =====================================================================================================================

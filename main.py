@@ -74,12 +74,15 @@ def make_parallel_env(env_config, n_rollout_threads, seed):
         return CustomWrapper([get_env_fn(i) for i in range(n_rollout_threads)])
 
 
+# Summary is hard coded for specific configs
 summary_dict = {
-        "reserve": [2, 9, 16],
-        "collateral_factor": [4, 11, 18],
-        "utilization_ratio": [3, 10, 17],
-        "token_price": [25, 29, 33],
-        "agent_balance": [39, 40, 41]
+        "reserve": [2, 13],
+        "utilization_ratio": [3, 14],
+        "collateral_factor": [4, 15],
+        "supply_interest_rate": [5, 16],
+        "borrow_interest_rate": [6, 17],
+        "token_price": [24, 28],
+        "agent_balance": [34, 35]
     }
 
 

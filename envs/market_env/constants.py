@@ -53,8 +53,8 @@ LP_DEPOSIT_AMOUNT = 10
 # 4) Gym Constants
 # 4.1) PLF Pool
 PLF_OBSERVATION_SPACE = spaces.Box(
-    low=np.array([0, 0, -np.inf, 0, 0, 0, 0]),
-    high=np.array([np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf]),
+    low=np.array([0, 0, -np.inf, 0, 0, 0, 0, 0, 0, 0, 0]),
+    high=np.array([np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, 1, np.inf, np.inf]),
     dtype=np.float32
 )
 PLF_GOVERNANCE_ACTION_MAPPING = {
@@ -92,12 +92,11 @@ TOKEN_OBSERVATION_SPACE = spaces.Box(
 )
 
 # 4.4) Agents
-AGENT_OBSERVATION_SPACE = lambda num_plf_pools: spaces.Box(low=np.array([-np.inf]*num_plf_pools),
-                                                           high=np.array([np.inf]*num_plf_pools),
+AGENT_OBSERVATION_SPACE = lambda num_plf_pools: spaces.Box(low=np.array([-np.inf] * num_plf_pools),
+                                                           high=np.array([np.inf] * num_plf_pools),
                                                            dtype=np.float32)
 
 # 5) Reward Function Constants
 REWARD_ILLEGAL_ACTION = -10000
 REWARD_TYPE_PROTOCOL_REVENUE = "protocol_revenue"
 REWARD_TYPE_MAXIMUM_EXPOSURE = "maximum_exposure"
-
