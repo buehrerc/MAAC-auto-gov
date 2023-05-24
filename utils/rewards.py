@@ -58,16 +58,15 @@ def maximum_exposure(
     illegal_action: bool
 ) -> float:
     """
-    Function computes the maximum exposure of an agent towards a lending protocol
+    Function computes the maximum exposure of an agent towards a lending protocol.
+    The maximum exposure can be understood as the total value of all the borrowed funds.
     """
     # If an illegal action was picked, the agent gets a punishment
     if illegal_action:
         return REWARD_ILLEGAL_ACTION
 
     total_exposure = 0.0
-    # Compute exposure for supply and collateral of loans
-    for record in [lending_protocol.supply_record, lending_protocol.borrow_record]:
-        for i in list(filter(lambda x: x[0] == agent_id, record)):
-            for supply_hash, supply_amount in record[i]:
-                total_exposure += lending_protocol.plf_pools[i[1]].get_supply(supply_hash) * lending_protocol.plf_pools[i[1]].get_token_price()
+    for agent_id, pool_collateral, pool_loan in list(filter(lambda x: x[0] == agent_id, lending_protocol.borrow_record)):
+        for borrow_hash, _ in lending_protocol.borrow_record[(agent_id, pool_collateral, pool_loan)]:
+            total_exposure += lending_protocol.plf_pools[pool_loan].get_borrow(borrow_hash) * lending_protocol.plf_pools[pool_loan].get_token_price()
     return total_exposure

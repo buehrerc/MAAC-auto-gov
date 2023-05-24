@@ -74,6 +74,19 @@ def make_parallel_env(env_config, n_rollout_threads, seed):
         return CustomWrapper([get_env_fn(i) for i in range(n_rollout_threads)])
 
 
+summary_dict = {
+        "reserve": [2, 9, 16],
+        "collateral_factor": [4, 11, 18],
+        "utilization_ratio": [3, 10, 17],
+        "token_price": [25, 29, 33],
+        "agent_balance": [39, 40, 41]
+    }
+
+
+def generate_summary(data):
+    return "\n" + "\n".join([key + ": " + str(data[:, value].mean(0).tolist()) for key, value in summary_dict.items()]) + "\n"
+
+
 def train(
     env: CustomWrapper,
     model: AttentionSAC,
@@ -111,9 +124,6 @@ def train(
             t += config.n_rollout_threads
             if (len(replay_buffer) >= config.batch_size and
                     (t % config.steps_per_update) < config.n_rollout_threads):
-                logging.info(f"Average Reward: {np.array(replay_buffer.rew_buffs).mean(axis=1).tolist()}")
-                logging.info(f"Action Buffer: {replay_buffer.ac_buffs[0].sum(0)}")
-                logging.info(f"Action Buffer: {replay_buffer.ac_buffs[1].sum(0)}")
                 if config.use_gpu:
                     model.prep_training(device='gpu')
                 else:
@@ -125,8 +135,11 @@ def train(
                     model.update_policies(sample, logger=logger)
                     model.update_all_targets()
                 model.prep_rollouts(device='cpu')
-        ep_rews = replay_buffer.get_average_rewards(
-            config.episode_length * config.n_rollout_threads)
+        # Recap Episode
+        ep_rews = replay_buffer.get_average_rewards(config.episode_length * config.n_rollout_threads)
+        logging.info(f"Average Reward: {ep_rews}")
+        logging.info(generate_summary(replay_buffer.get_buffer_data(config.episode_length * config.n_rollout_threads)))
+
         for a_i, a_ep_rew in enumerate(ep_rews):
             logger.add_scalar('agent%i/mean_episode_rewards' % a_i,
                               a_ep_rew * config.episode_length, ep_i)
