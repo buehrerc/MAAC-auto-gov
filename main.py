@@ -5,6 +5,7 @@ import logging
 import argparse
 import torch
 import numpy as np
+import matplotlib.pyplot as plt
 from typing import List
 from torch.autograd import Variable
 from gym.spaces import Box
@@ -22,7 +23,7 @@ from tensorboardX import SummaryWriter
 
 def init_logger(log_dir):
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=logging.INFO,
         format="%(asctime)s:[%(levelname)s] >> {%(module)s}: %(message)s",
         handlers=[logging.FileHandler(os.path.join(log_dir, "debug.log")), logging.StreamHandler()],
     )
@@ -49,9 +50,11 @@ def init_params(config, env_config):
     # Logger
     logger = SummaryWriter(str(log_dir))
     state_mapping = generate_state_mapping(env_config)
+
     # Fix randomness
     torch.manual_seed(config.seed)
     random.seed(config.seed)
+    np.random.seed(config.seed)
 
     return logger, run_num, run_dir, log_dir, state_mapping
 
@@ -135,6 +138,16 @@ def train(
         for a_i, a_ep_rew in enumerate(ep_rews):
             logger.add_scalar('agent%i/mean_episode_rewards' % a_i,
                               a_ep_rew * config.episode_length, ep_i)
+
+        if ep_i % 100 < config.n_rollout_threads & ep_i > 1:
+            os.makedirs(run_dir / 'plots', exist_ok=True)
+            for name, value in zip(state_mapping,
+                                   replay_buffer.get_buffer_data(config.episode_length * config.n_rollout_threads)[::config.n_rollout_threads].T):
+                fig, ax = plt.subplots(nrows=1, ncols=1)  # create figure & 1 axis
+                ax.plot(np.arange(len(value)), value)
+                ax.set_title(f'episode_{ep_i}' + "_" + name.replace("/", "_"))
+                logger.add_figure('matplotlib', fig)
+                # fig.savefig(run_dir / 'plots' / f'episode_{ep_i}' / (name.replace("/", "_") + '.png'))
 
         if ep_i % config.save_interval < config.n_rollout_threads:
             model.prep_rollouts(device='cpu')

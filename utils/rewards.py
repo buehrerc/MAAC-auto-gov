@@ -39,6 +39,7 @@ def protocol_revenue(
 ) -> float:
     """
     Function calculates the lending protocol's revenue by computing the revenue of each plf_pool
+    Additionally, if a lending protocol has a negative reserve -> punishment just like illegal action
 
     plf_pool_revenue = plf_reserve[t] * token_price[t] - plf_reserve[t-1] * token_price[t-1]
     where, plf_reserve[t] = supply_token[t] - borrow_token[t] = available_funds[t]
@@ -49,7 +50,8 @@ def protocol_revenue(
 
     assert lending_protocol.owner == agent_id, f"Agent {agent_id} is not owner of the lending protocol"
 
-    return sum([plf_pool.get_revenue() for plf_pool in lending_protocol.plf_pools])
+    return sum([plf_pool.get_revenue() if plf_pool.reserve > 0 else REWARD_ILLEGAL_ACTION
+                for plf_pool in lending_protocol.plf_pools])
 
 
 def maximum_exposure(
