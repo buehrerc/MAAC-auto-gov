@@ -1,10 +1,11 @@
 import os
-import logging
 import json
+import random
+import logging
 import argparse
 import torch
 import numpy as np
-import random
+from typing import List
 from torch.autograd import Variable
 from gym.spaces import Box
 from pathlib import Path
@@ -14,6 +15,7 @@ from utils.custom_wrappers import CustomWrapper, CustomDummyWrapper
 from algorithms.attention_sac import AttentionSAC
 from envs.market_env.env import MultiAgentEnv
 from envs.market_env.constants import CONFIG_PARAM
+from envs.market_env.utils import generate_state_mapping
 from utils.buffer import ReplayBuffer
 from tensorboardX import SummaryWriter
 
@@ -26,7 +28,7 @@ def init_logger(log_dir):
     )
 
 
-def init_params(config):
+def init_params(config, env_config):
     # Initialize directory for logs and model
     model_dir = Path('./models') / config.model_name
     if not model_dir.exists():
@@ -46,12 +48,12 @@ def init_params(config):
 
     # Logger
     logger = SummaryWriter(str(log_dir))
-
+    state_mapping = generate_state_mapping(env_config)
     # Fix randomness
     torch.manual_seed(config.seed)
     random.seed(config.seed)
 
-    return logger, run_num, run_dir, log_dir
+    return logger, run_num, run_dir, log_dir, state_mapping
 
 
 def init_env(env_config, seed):
@@ -74,26 +76,11 @@ def make_parallel_env(env_config, n_rollout_threads, seed):
         return CustomWrapper([get_env_fn(i) for i in range(n_rollout_threads)])
 
 
-# Summary is hard coded for specific configs
-summary_dict = {
-        "reserve": [2, 13],
-        "utilization_ratio": [3, 14],
-        "collateral_factor": [4, 15],
-        "supply_interest_rate": [5, 16],
-        "borrow_interest_rate": [6, 17],
-        "token_price": [24, 28],
-        "agent_balance": [34, 35]
-    }
-
-
-def generate_summary(data):
-    return "\n" + "\n".join([key + ": " + str(data[:, value].mean(0).tolist()) for key, value in summary_dict.items()]) + "\n"
-
-
 def train(
     env: CustomWrapper,
     model: AttentionSAC,
     replay_buffer: ReplayBuffer,
+    state_mapping: List[str],
     logger: SummaryWriter,
     config,
     run_dir: str,
@@ -141,7 +128,9 @@ def train(
         # Recap Episode
         ep_rews = replay_buffer.get_average_rewards(config.episode_length * config.n_rollout_threads)
         logging.info(f"Average Reward: {ep_rews}")
-        logging.info(generate_summary(replay_buffer.get_buffer_data(config.episode_length * config.n_rollout_threads)))
+
+        for name, value in zip(state_mapping, replay_buffer.get_buffer_data(config.episode_length * config.n_rollout_threads).mean(0)):
+            logger.add_scalar(name, value, ep_i)
 
         for a_i, a_ep_rew in enumerate(ep_rews):
             logger.add_scalar('agent%i/mean_episode_rewards' % a_i,
@@ -155,7 +144,7 @@ def train(
 
 
 def run(config, env_config):
-    logger, run_num, run_dir, log_dir = init_params(config)
+    logger, run_num, run_dir, log_dir, state_mapping = init_params(config, env_config)
     init_logger(log_dir)
 
     env = make_parallel_env(env_config, config.n_rollout_threads, config.seed)
@@ -180,7 +169,7 @@ def run(config, env_config):
         ac_dims=[acsp.shape[0] if isinstance(acsp, Box) else acsp.n
                                   for acsp in env.action_space])
 
-    train(env, model, replay_buffer, logger, config, run_dir)
+    train(env, model, replay_buffer, state_mapping, logger, config, run_dir)
 
     model.save(run_dir / 'model.pt')
     env.close()

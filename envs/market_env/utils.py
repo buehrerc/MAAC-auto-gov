@@ -5,6 +5,12 @@ from gym import spaces
 from envs.market_env.constants import (
     CONFIG_AGENT_TYPE_GOVERNANCE,
     CONFIG_AGENT_TYPE_USER,
+    ENVIRONMENT_STATES,
+    CONFIG_MARKET,
+    CONFIG_TOKEN,
+    CONFIG_LENDING_PROTOCOL,
+    CONFIG_PLF_POOL,
+    CONFIG_AGENT
 )
 
 
@@ -16,6 +22,13 @@ def combine_observation_space(obj_list: List[object], obs_spaces: List[spaces.Sp
         low=np.concatenate([o.low for o in observation_spaces]),
         high=np.concatenate([o.high for o in observation_spaces])
     )
+
+
+def generate_state_mapping(env_config) -> List[str]:
+    token_num = len(env_config[CONFIG_MARKET][CONFIG_TOKEN])
+    plf_num = len(env_config[CONFIG_LENDING_PROTOCOL][CONFIG_PLF_POOL])
+    agent_num = len(env_config[CONFIG_AGENT])
+    return ENVIRONMENT_STATES(agent_num, token_num, plf_num)
 
 
 def encode_action(num_plf_pools) -> (spaces.Space, Dict):

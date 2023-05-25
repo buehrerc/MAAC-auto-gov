@@ -76,6 +76,19 @@ PLF_ACTION_SPACE = {
     CONFIG_AGENT_TYPE_GOVERNANCE: len(PLF_GOVERNANCE_ACTION_MAPPING),
     CONFIG_AGENT_TYPE_USER: len(PLF_USER_ACTION_MAPPING)
 }
+PLF_STATES = lambda plf_number: [
+    f"pool_{plf_number}/total_supply_token",
+    f"pool_{plf_number}/total_borrow_token",
+    f"pool_{plf_number}/reserve",
+    f"pool_{plf_number}/utilization_ratio",
+    f"pool_{plf_number}/collateral_factor",
+    f"pool_{plf_number}/supply_interest_rate",
+    f"pool_{plf_number}/borrow_interest_rate",
+    f"pool_{plf_number}/base_borrow_rate",
+    f"pool_{plf_number}/optimal_utilization_ratio",
+    f"pool_{plf_number}/stable_borrow_slope_1",
+    f"pool_{plf_number}/stable_borrow_slope_2",
+]
 
 # 4.2) LendingProtocol
 LP_OBSERVATION_SPACE = spaces.Box(
@@ -83,6 +96,10 @@ LP_OBSERVATION_SPACE = spaces.Box(
     high=np.array([LP_DEFAULT_HEALTH_FACTOR]),
     dtype=np.float32
 )
+LP_STATES = lambda num_plf_pools: sum([
+    sum([PLF_STATES(i) for i in range(num_plf_pools)], []),
+    [f"pool_{i}/worst_loan" for i in range(num_plf_pools)]
+], [])
 
 # 4.3) Token
 TOKEN_OBSERVATION_SPACE = spaces.Box(
@@ -90,11 +107,33 @@ TOKEN_OBSERVATION_SPACE = spaces.Box(
     high=np.array([np.inf, np.inf, np.inf, np.inf]),
     dtype=np.float32
 )
+TOKEN_STATES = lambda token_number: [
+    f"token_{token_number}/price",
+    f"token_{token_number}/borrow_interest_rate",
+    f"token_{token_number}/supply_interest_rate",
+    f"token_{token_number}/asset_volatility",
+]
 
-# 4.4) Agents
+# 4.4) Market
+MARKET_STATES = lambda token_num: sum([
+    TOKEN_STATES(i) for i in range(token_num)
+], [])
+
+# 4.5) Agents
 AGENT_OBSERVATION_SPACE = lambda num_plf_pools: spaces.Box(low=np.array([-np.inf] * num_plf_pools),
                                                            high=np.array([np.inf] * num_plf_pools),
                                                            dtype=np.float32)
+AGENT_STATES = lambda agent_number, token_num: [
+    f"agent{agent_number}/token_{i}_balance"
+    for i in range(token_num)
+]
+
+# 4.6) Environment
+ENVIRONMENT_STATES = lambda agent_num, token_num, plf_num: sum([
+    LP_STATES(plf_num),
+    MARKET_STATES(token_num),
+    sum([AGENT_STATES(i, token_num) for i in range(agent_num)], [])
+], [])
 
 # 5) Reward Function Constants
 REWARD_ILLEGAL_ACTION = -10000
