@@ -37,6 +37,6 @@ echo "==========================================================================
 source ../venv/bin/activate
 nvidia-smi
 
-python main.py test_model --config ./config/simplified_config.json --use_gpu
+python main.py test_model --config ./config/simplified_config.json
 
 deactivate
