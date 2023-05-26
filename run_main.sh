@@ -8,8 +8,14 @@
 # -= Resources =-
 #
 #SBATCH --job-name=maac_auto_gov                   # DON'T FORGET TO UPDATE
+#SBATCH --output=output.txt
+#SBATCH --error=error.txt
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=8G
+#SBATCH --time=02:00:00
+#SBATCH --gres=gpu:1
 
 ################################################################################
 ##################### !!! DO NOT EDIT BELOW THIS LINE !!! ######################
@@ -29,8 +35,9 @@ module load python/3.10.4
 module load openmpi/4.1.4
 
 echo "==============================================================================="
-source activate venv
+source ../venv/bin/activate
+nvidia-smi
 
 python main.py test_model --config ./config/simplified_config.json --use_gpu
 
-source deactivate venv
+deactivate
