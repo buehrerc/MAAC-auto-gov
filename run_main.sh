@@ -31,6 +31,6 @@ module load openmpi/4.1.4
 echo "==============================================================================="
 source activate venv
 
-python main.py test_model --config ./config/simplified_config.json
+python main.py test_model --config ./config/simplified_config.json --use_gpu
 
 source deactivate venv
