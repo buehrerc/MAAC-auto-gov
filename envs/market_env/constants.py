@@ -139,5 +139,5 @@ ENVIRONMENT_STATES = lambda agent_num, token_num, plf_num: sum([
 REWARD_ILLEGAL_ACTION = -10000
 REWARD_TYPE_PROTOCOL_REVENUE = "protocol_revenue"
 REWARD_TYPE_MAXIMUM_EXPOSURE = "maximum_exposure"
-REWARD_TYPE_WEALTH_INCREASE = "wealth_increase"
+REWARD_TYPE_PROFIT = "profit"
 REWARD_TYPE_COMPOSITE_REWARD = "composite_reward"

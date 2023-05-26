@@ -3,7 +3,7 @@ from envs.market_env.constants import (
     CONFIG_AGENT,
     REWARD_TYPE_PROTOCOL_REVENUE,
     REWARD_TYPE_MAXIMUM_EXPOSURE,
-    REWARD_TYPE_WEALTH_INCREASE,
+    REWARD_TYPE_PROFIT,
     REWARD_TYPE_COMPOSITE_REWARD,
     REWARD_ILLEGAL_ACTION
 )
@@ -31,8 +31,8 @@ def reward_function(
         return protocol_revenue(agent_id, lending_protocol, illegal_action)
     elif reward_type == REWARD_TYPE_MAXIMUM_EXPOSURE:
         return maximum_exposure(agent_id, lending_protocol, illegal_action)
-    elif reward_type == REWARD_TYPE_WEALTH_INCREASE:
-        return wealth_increase(agent_id, lending_protocol, illegal_action)
+    elif reward_type == REWARD_TYPE_PROFIT:
+        return profit(agent_id, lending_protocol, illegal_action)
     elif reward_type == REWARD_TYPE_COMPOSITE_REWARD:
         return composite_reward(agent_id, lending_protocol, illegal_action)
     else:
@@ -81,7 +81,7 @@ def maximum_exposure(
     return total_exposure
 
 
-def wealth_increase(
+def profit(
     agent_id: int,
     lending_protocol: LendingProtocol,
     illegal_action: bool,
@@ -105,5 +105,5 @@ def composite_reward(
     lending_protocol: LendingProtocol,
     illegal_action: bool,
 ) -> float:
-    return 0.5 * maximum_exposure(agent_id, lending_protocol, illegal_action) + \
-           0.5 * wealth_increase(agent_id, lending_protocol, illegal_action)
+    return 0.8 * maximum_exposure(agent_id, lending_protocol, illegal_action) + \
+           0.2 * profit(agent_id, lending_protocol, illegal_action)
