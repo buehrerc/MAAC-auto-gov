@@ -37,7 +37,7 @@
     {
       "name": "UserAgent",
       "type": "user",
-      "reward": "wealth_increase",
+      "reward": "profit",
       "lr": 0.01,
       "balance": {
         "TKN": 1000,
