@@ -146,7 +146,7 @@ def train(
                 fig, ax = plt.subplots(nrows=1, ncols=1)  # create figure & 1 axis
                 ax.plot(np.arange(len(value)), value)
                 ax.set_title(f'episode_{ep_i}' + "_" + name.replace("/", "_"))
-                logger.add_figure('matplotlib', fig)
+                logger.add_figure('matplotlib/' + name, fig, ep_i)
                 # fig.savefig(run_dir / 'plots' / f'episode_{ep_i}' / (name.replace("/", "_") + '.png'))
 
         if ep_i % config.save_interval < config.n_rollout_threads:

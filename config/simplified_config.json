@@ -4,7 +4,7 @@
       {
         "name": "TKN",
         "price": 3.0,
-        "asset_volatility": 1
+        "asset_volatility": 0.2
       },
       {
         "name": "USDC",
@@ -37,7 +37,7 @@
     {
       "name": "UserAgent",
       "type": "user",
-      "reward": "maximum_exposure",
+      "reward": "wealth_increase",
       "lr": 0.01,
       "balance": {
         "TKN": 1000,
@@ -46,10 +46,10 @@
     }
   ],
   "parameter": {
-    "n_rollout_threads": 4,
+    "n_rollout_threads": 8,
     "buffer_length": 4096,
     "n_episodes": 1024,
-    "episode_length": 128,
+    "episode_length": 256,
     "batch_size": 1024,
     "save_interval": 1000,
     "attend_heads": 4,

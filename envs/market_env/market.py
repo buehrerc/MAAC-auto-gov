@@ -35,7 +35,9 @@ class Market:
         Token object does not have a reset function, since the Tokens are just reinitialized
         :return:
         """
-        token_list = list(map(self._initialize_token, self.market_config[CONFIG_TOKEN]))
+        token_list = [self._initialize_token(param, self.seed+i)
+                      for i, param in enumerate(self.market_config[CONFIG_TOKEN])]
+
         token_names = [t.get_name() for t in token_list]
         self.tokens = dict(zip(token_names, token_list))
         self.observation_space = combine_observation_space(token_list)
@@ -50,8 +52,9 @@ class Market:
     def _get_state(self) -> ObsType:
         return torch.cat([token.get_state() for token in self.tokens.values()])
 
-    def _initialize_token(self, param):
-        return Token(seed=self.seed, **param)
+    @staticmethod
+    def _initialize_token(param, seed):
+        return Token(seed=seed, **param)
 
     def update(self) -> ObsType:
         """

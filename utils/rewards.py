@@ -1,7 +1,9 @@
 from envs.market_env.lending_protocol import LendingProtocol
 from envs.market_env.constants import (
+    CONFIG_AGENT,
     REWARD_TYPE_PROTOCOL_REVENUE,
     REWARD_TYPE_MAXIMUM_EXPOSURE,
+    REWARD_TYPE_WEALTH_INCREASE,
     REWARD_ILLEGAL_ACTION
 )
 
@@ -28,6 +30,8 @@ def reward_function(
         return protocol_revenue(agent_id, lending_protocol, illegal_action)
     elif reward_type == REWARD_TYPE_MAXIMUM_EXPOSURE:
         return maximum_exposure(agent_id, lending_protocol, illegal_action)
+    elif reward_type == REWARD_TYPE_WEALTH_INCREASE:
+        return wealth_increase(agent_id, lending_protocol, illegal_action)
     else:
         raise NotImplementedError("Reward function {} is unknown".format(reward_type))
 
@@ -72,3 +76,22 @@ def maximum_exposure(
         for borrow_hash, _ in lending_protocol.borrow_record[(agent_id, pool_collateral, pool_loan)]:
             total_exposure += lending_protocol.plf_pools[pool_loan].get_borrow(borrow_hash) * lending_protocol.plf_pools[pool_loan].get_token_price()
     return total_exposure
+
+
+def wealth_increase(
+    agent_id: int,
+    lending_protocol: LendingProtocol,
+    illegal_action: bool,
+) -> float:
+    """
+    Function rewards the increase of an agents wealth.
+    """
+    # If an illegal action was picked, the agent gets a punishment
+    if illegal_action:
+        return REWARD_ILLEGAL_ACTION
+
+    initial_balance = lending_protocol.config[CONFIG_AGENT][agent_id]["balance"]
+    diff = 0.0
+    for token_name, current in zip(lending_protocol.agent_balance[agent_id]):
+        diff += (current - initial_balance.get(token_name, 0)) * lending_protocol.market.get_token(token_name).get_price()
+    return diff
