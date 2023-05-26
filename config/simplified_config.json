@@ -37,19 +37,19 @@
     {
       "name": "UserAgent",
       "type": "user",
-      "reward": "profit",
+      "reward": "composite_reward",
       "lr": 0.01,
       "balance": {
-        "TKN": 1000,
-        "USDC": 5000
+        "TKN": 10000,
+        "USDC": 50000
       }
     }
   ],
   "parameter": {
     "n_rollout_threads": 8,
     "buffer_length": 4096,
-    "n_episodes": 1024,
-    "episode_length": 256,
+    "n_episodes": 50000,
+    "episode_length": 400,
     "batch_size": 1024,
     "save_interval": 1000,
     "attend_heads": 4,
