@@ -4,6 +4,7 @@ from envs.market_env.constants import (
     REWARD_TYPE_PROTOCOL_REVENUE,
     REWARD_TYPE_MAXIMUM_EXPOSURE,
     REWARD_TYPE_WEALTH_INCREASE,
+    REWARD_TYPE_COMPOSITE_REWARD,
     REWARD_ILLEGAL_ACTION
 )
 
@@ -32,6 +33,8 @@ def reward_function(
         return maximum_exposure(agent_id, lending_protocol, illegal_action)
     elif reward_type == REWARD_TYPE_WEALTH_INCREASE:
         return wealth_increase(agent_id, lending_protocol, illegal_action)
+    elif reward_type == REWARD_TYPE_COMPOSITE_REWARD:
+        return composite_reward(agent_id, lending_protocol, illegal_action)
     else:
         raise NotImplementedError("Reward function {} is unknown".format(reward_type))
 
@@ -95,3 +98,12 @@ def wealth_increase(
     for token_name, current in lending_protocol.agent_balance[agent_id].items():
         diff += (current - initial_balance.get(token_name, 0)) * lending_protocol.market.get_token(token_name).get_price()
     return diff
+
+
+def composite_reward(
+    agent_id: int,
+    lending_protocol: LendingProtocol,
+    illegal_action: bool,
+) -> float:
+    return 0.5 * maximum_exposure(agent_id, lending_protocol, illegal_action) + \
+           0.5 * wealth_increase(agent_id, lending_protocol, illegal_action)
