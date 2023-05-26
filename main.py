@@ -147,7 +147,6 @@ def train(
                 ax.plot(np.arange(len(value)), value)
                 ax.set_title(f'episode_{ep_i}' + "_" + name.replace("/", "_"))
                 logger.add_figure('matplotlib/' + name, fig, ep_i)
-                # fig.savefig(run_dir / 'plots' / f'episode_{ep_i}' / (name.replace("/", "_") + '.png'))
 
         if ep_i % config.save_interval < config.n_rollout_threads:
             model.prep_rollouts(device='cpu')
@@ -185,6 +184,9 @@ def run(config, env_config):
     train(env, model, replay_buffer, state_mapping, logger, config, run_dir)
 
     model.save(run_dir / 'model.pt')
+    env_config['args'] = vars(config)
+    with open(log_dir / "config.json", "w") as fp:
+        json.dump(env_config, fp)
     env.close()
     logger.export_scalars_to_json(str(log_dir / 'summary.json'))
     logger.close()
