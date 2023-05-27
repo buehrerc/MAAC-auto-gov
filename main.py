@@ -111,7 +111,13 @@ def train(
             # rearrange actions to be per environment
             # actions = [[ac[i] for ac in agent_actions] for i in range(config.n_rollout_threads)]
             actions = [[np.where(ac[i] == 1)[0][0] for ac in agent_actions] for i in range(config.n_rollout_threads)]
-            next_obs, rewards, dones, infos = env.step(actions)
+            # CBUE MODIFICATION: if assertions fail, the environment becomes unusable -> reset the environment
+            try:
+                next_obs, rewards, dones, infos = env.step(actions)
+            except AssertionError:
+                logging.info(AssertionError)
+                obs = env.reset()
+                continue
             replay_buffer.push(obs, agent_actions, rewards, next_obs, dones)
             obs = next_obs
             t += config.n_rollout_threads
