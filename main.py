@@ -145,16 +145,18 @@ def train(
             logger.add_scalar('agent%i/mean_episode_rewards' % a_i,
                               a_ep_rew * config.episode_length, ep_i)
 
-        if ep_i % 100 < config.n_rollout_threads & ep_i > 1:
+        if ep_i % config.save_interval < config.n_rollout_threads & ep_i > 1:
+            # Logging of states
             os.makedirs(run_dir / 'plots', exist_ok=True)
             for name, value in zip(state_mapping,
-                                   replay_buffer.get_buffer_data(config.episode_length * config.n_rollout_threads)[::config.n_rollout_threads].T):
+                                   replay_buffer.get_buffer_data(config.episode_length * config.n_rollout_threads)[
+                                   ::config.n_rollout_threads].T):
                 fig, ax = plt.subplots(nrows=1, ncols=1)  # create figure & 1 axis
                 ax.plot(np.arange(len(value)), value)
                 ax.set_title(f'episode_{ep_i}' + "_" + name.replace("/", "_"))
                 logger.add_figure('matplotlib/' + name, fig, ep_i)
 
-        if ep_i % config.save_interval < config.n_rollout_threads:
+            # Logging of weights
             model.prep_rollouts(device='cpu')
             os.makedirs(run_dir / 'incremental', exist_ok=True)
             model.save(run_dir / 'incremental' / ('model_ep%i.pt' % (ep_i + 1)))
