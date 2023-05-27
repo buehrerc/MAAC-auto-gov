@@ -1,5 +1,6 @@
 from typing import Tuple, Dict
 
+import logging
 import torch
 import numpy as np
 from gym.core import ActType, ObsType
@@ -16,7 +17,13 @@ def worker(remote, parent_remote, env_fn_wrapper):
     while True:
         cmd, data = remote.recv()
         if cmd == 'step':
-            ob, reward, done, info = env.step(data)
+            # If assertions fail within the environment, the environment becomes unusable -> reset the environment
+            try:
+                ob, reward, done, info = env.step(data)
+            except AssertionError:
+                logging.info(AssertionError)
+                _ = env.reset()
+                ob, reward, done, info = env.step(data)
             if all(done):
                 ob = env.reset()
             remote.send((ob, reward, done, info))
