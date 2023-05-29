@@ -35,6 +35,8 @@ class Market:
         Token object does not have a reset function, since the Tokens are just reinitialized
         :return:
         """
+        # Make sure that a fresh seed is used for each episode
+        self.seed += len(self.market_config[CONFIG_TOKEN])
         token_list = [self._initialize_token(param, self.seed+i)
                       for i, param in enumerate(self.market_config[CONFIG_TOKEN])]
 
