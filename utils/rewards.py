@@ -117,7 +117,7 @@ def profit(
     if illegal_action:
         return REWARD_ILLEGAL_ACTION
 
-    initial_balance = lending_protocol.config[CONFIG_AGENT][agent_id]["balance"]
+    initial_balance = lending_protocol.config[CONFIG_AGENT][agent_id].get(["balance"], {})
     diff = 0.0
     for token_name, current in lending_protocol.agent_balance[agent_id].items():
         diff += (current - initial_balance.get(token_name, 0)) * lending_protocol.market.get_token(token_name).get_price()
