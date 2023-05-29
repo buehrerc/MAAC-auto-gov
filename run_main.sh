@@ -12,7 +12,7 @@
 #SBATCH --error=error.txt
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=8
+#SBATCH --cpus-per-task=12
 #SBATCH --mem-per-cpu=8G
 #SBATCH --time=26:00:00
 
