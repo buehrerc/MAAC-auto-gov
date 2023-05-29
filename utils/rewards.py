@@ -1,15 +1,41 @@
+from typing import List, Tuple
+
 from envs.market_env.lending_protocol import LendingProtocol
 from envs.market_env.constants import (
     CONFIG_AGENT,
     REWARD_TYPE_PROTOCOL_REVENUE,
     REWARD_TYPE_MAXIMUM_EXPOSURE,
     REWARD_TYPE_PROFIT,
-    REWARD_TYPE_COMPOSITE_REWARD,
     REWARD_ILLEGAL_ACTION
 )
 
 
 def reward_function(
+    agent_id: int,
+    reward_type: List[Tuple],
+    lending_protocol: LendingProtocol,
+    illegal_action: bool,
+):
+    """
+
+    Supported reward_types:
+        + protocol_revenue
+        + maximum_exposure
+        + profit
+
+    :param agent_id: Id of agent whose reward is computed
+    :param reward_type: List of reward functions: [[weight, reward_type]+]
+    :param lending_protocol: Lending protocol to compute the reward function on
+    :param illegal_action: True: Agent as performed an illegal action,
+                           False: Agent didn't perform an illegal action
+    :return: reward
+    """
+    return sum([
+        weight * reward_function_by_type(agent_id, rt, lending_protocol, illegal_action) for weight, rt in reward_type
+    ])
+
+
+def reward_function_by_type(
     agent_id: int,
     reward_type: str,
     lending_protocol: LendingProtocol,
@@ -33,8 +59,6 @@ def reward_function(
         return maximum_exposure(agent_id, lending_protocol, illegal_action)
     elif reward_type == REWARD_TYPE_PROFIT:
         return profit(agent_id, lending_protocol, illegal_action)
-    elif reward_type == REWARD_TYPE_COMPOSITE_REWARD:
-        return composite_reward(agent_id, lending_protocol, illegal_action)
     else:
         raise NotImplementedError("Reward function {} is unknown".format(reward_type))
 
@@ -98,12 +122,3 @@ def profit(
     for token_name, current in lending_protocol.agent_balance[agent_id].items():
         diff += (current - initial_balance.get(token_name, 0)) * lending_protocol.market.get_token(token_name).get_price()
     return diff
-
-
-def composite_reward(
-    agent_id: int,
-    lending_protocol: LendingProtocol,
-    illegal_action: bool,
-) -> float:
-    return 0.8 * maximum_exposure(agent_id, lending_protocol, illegal_action) + \
-           0.2 * profit(agent_id, lending_protocol, illegal_action)

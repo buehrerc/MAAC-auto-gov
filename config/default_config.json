@@ -41,7 +41,7 @@
     {
       "name": "GovAgent",
       "type": "governance",
-      "reward": "protocol_revenue",
+      "reward": [[1, "protocol_revenue"]],
       "lr": 0.01,
       "hidden_dim": 64,
       "onehot_dim": 0
@@ -49,7 +49,7 @@
     {
       "name": "UserAgent",
       "type": "user",
-      "reward": "maximum_exposure",
+      "reward": [[1,"maximum_exposure"]],
       "lr": 0.01,
       "hidden_dim": 64,
       "onehot_dim": 0,

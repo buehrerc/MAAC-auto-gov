@@ -31,13 +31,13 @@
     {
       "name": "GovAgent",
       "type": "governance",
-      "reward": "protocol_revenue",
+      "reward": [[0.7, "protocol_revenue"], [0.3, "profit"]],
       "lr": 0.01
     },
     {
       "name": "UserAgent",
       "type": "user",
-      "reward": "composite_reward",
+      "reward": [[0.8, "maximum_exposure"], [0.2, "profit"]],
       "lr": 0.01,
       "balance": {
         "TKN": 10000,
@@ -48,10 +48,10 @@
   "parameter": {
     "n_rollout_threads": 8,
     "buffer_length": 4096,
-    "n_episodes": 50000,
-    "episode_length": 400,
+    "n_episodes": 5000,
+    "episode_length": 300,
     "batch_size": 1024,
-    "save_interval": 1000,
+    "save_interval": 500,
     "attend_heads": 4,
     "pi_lr": 0.01,
     "q_lr": 0.01,

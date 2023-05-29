@@ -35,7 +35,7 @@ class MultiAgentEnv(gym.Env):
 
         # Agent Parameters
         self.agent_mask: List[str] = [agent[CONFIG_AGENT_TYPE] for agent in self.config[CONFIG_AGENT]]
-        self.agent_reward: List[str] = [agent[CONFIG_AGENT_REWARD] for agent in self.config[CONFIG_AGENT]]
+        self.agent_reward: List[Tuple] = [agent[CONFIG_AGENT_REWARD] for agent in self.config[CONFIG_AGENT]]
 
         # Environment Attributes
         self.market = Market(config=self.config, seed=seed)
