@@ -37,7 +37,7 @@
     {
       "name": "UserAgent",
       "type": "user",
-      "reward": [[0.6, "maximum_exposure"], [0.4, "profit"]],
+      "reward": [[0.3, "maximum_exposure"], [0.7, "profit"]],
       "lr": 0.01,
       "balance": {
         "TKN": 10000,
