@@ -111,7 +111,6 @@ class Token:
         self.borrow_interest_rate = borrow_interest_rate
         self.supply_interest_rate = supply_interest_rate
         self.asset_volatility = asset_volatility
-        self.price_history = list()
         self.rng = np.random.RandomState(seed)
 
     def get_name(self) -> str:
@@ -134,14 +133,10 @@ class Token:
     def get_supply_interest_rate(self):
         return self.supply_interest_rate
 
-    def get_price_history(self):
-        return self.price_history
-
     def update(self) -> torch.Tensor:
         # Asset price adheres geometric Brownian motion with zero drift
         new_price = self.price * np.exp(self.asset_volatility * self.rng.normal(0, 1))
         assert new_price > 0, "asset price cannot be negative."
-        self.price_history.append(new_price)
         self.price = new_price
         return self.get_state()
 
