@@ -1,6 +1,5 @@
 from typing import List, Tuple
 
-from envs.market_env.lending_protocol import LendingProtocol
 from envs.market_env.constants import (
     CONFIG_AGENT,
     REWARD_TYPE_PROTOCOL_REVENUE,
@@ -13,7 +12,7 @@ from envs.market_env.constants import (
 def reward_function(
     agent_id: int,
     reward_type: List[Tuple],
-    lending_protocol: LendingProtocol,
+    env,
     illegal_action: bool,
 ):
     """
@@ -25,20 +24,20 @@ def reward_function(
 
     :param agent_id: Id of agent whose reward is computed
     :param reward_type: List of reward functions: [[weight, reward_type]+]
-    :param lending_protocol: Lending protocol to compute the reward function on
+    :param env: Environment to compute the reward function on
     :param illegal_action: True: Agent as performed an illegal action,
                            False: Agent didn't perform an illegal action
     :return: reward
     """
     return sum([
-        weight * reward_function_by_type(agent_id, rt, lending_protocol, illegal_action) for weight, rt in reward_type
+        weight * reward_function_by_type(agent_id, rt, env, illegal_action) for weight, rt in reward_type
     ])
 
 
 def reward_function_by_type(
     agent_id: int,
     reward_type: str,
-    lending_protocol: LendingProtocol,
+    env,
     illegal_action: bool
 ) -> float:
     """
@@ -48,24 +47,24 @@ def reward_function_by_type(
 
     :param agent_id: Id of agent whose reward is computed
     :param reward_type: name of the reward function
-    :param lending_protocol: Lending protocol to compute the reward function on
+    :param env: Environment to compute the reward function on
     :param illegal_action: True: Agent as performed an illegal action,
                            False: Agent didn't perform an illegal action
     :return: reward
     """
     if reward_type == REWARD_TYPE_PROTOCOL_REVENUE:
-        return protocol_revenue(agent_id, lending_protocol, illegal_action)
+        return protocol_revenue(agent_id, env, illegal_action)
     elif reward_type == REWARD_TYPE_MAXIMUM_EXPOSURE:
-        return maximum_exposure(agent_id, lending_protocol, illegal_action)
+        return maximum_exposure(agent_id, env, illegal_action)
     elif reward_type == REWARD_TYPE_PROFIT:
-        return profit(agent_id, lending_protocol, illegal_action)
+        return profit(agent_id, env, illegal_action)
     else:
         raise NotImplementedError("Reward function {} is unknown".format(reward_type))
 
 
 def protocol_revenue(
     agent_id: int,
-    lending_protocol: LendingProtocol,
+    env,
     illegal_action: bool
 ) -> float:
     """
@@ -79,15 +78,15 @@ def protocol_revenue(
     if illegal_action:
         return REWARD_ILLEGAL_ACTION
 
-    assert lending_protocol.owner == agent_id, f"Agent {agent_id} is not owner of the lending protocol"
+    assert env.lending_protocol.owner == agent_id, f"Agent {agent_id} is not owner of the lending protocol"
 
     return sum([plf_pool.get_revenue() if plf_pool.reserve > 0 else REWARD_ILLEGAL_ACTION
-                for plf_pool in lending_protocol.plf_pools])
+                for plf_pool in env.lending_protocol.plf_pools])
 
 
 def maximum_exposure(
     agent_id: int,
-    lending_protocol: LendingProtocol,
+    env,
     illegal_action: bool
 ) -> float:
     """
@@ -99,26 +98,26 @@ def maximum_exposure(
         return REWARD_ILLEGAL_ACTION
 
     total_exposure = 0.0
-    for agent_id, pool_collateral, pool_loan in list(filter(lambda x: x[0] == agent_id, lending_protocol.borrow_record)):
-        for borrow_hash, _ in lending_protocol.borrow_record[(agent_id, pool_collateral, pool_loan)]:
-            total_exposure += lending_protocol.plf_pools[pool_loan].get_borrow(borrow_hash) * lending_protocol.plf_pools[pool_loan].get_token_price()
+    for agent_id, pool_collateral, pool_loan in list(filter(lambda x: x[0] == agent_id, env.lending_protocol.borrow_record)):
+        for borrow_hash, _ in env.lending_protocol.borrow_record[(agent_id, pool_collateral, pool_loan)]:
+            total_exposure += env.lending_protocol.plf_pools[pool_loan].get_borrow(borrow_hash) * env.lending_protocol.plf_pools[pool_loan].get_token_price()
     return total_exposure
 
 
 def profit(
     agent_id: int,
-    lending_protocol: LendingProtocol,
+    env,
     illegal_action: bool,
 ) -> float:
     """
-    Function rewards the increase of an agents wealth.
+    Function rewards the profit of an agent.
+    profit = balance[t] - balance[t-1]
     """
     # If an illegal action was picked, the agent gets a punishment
     if illegal_action:
         return REWARD_ILLEGAL_ACTION
 
-    initial_balance = lending_protocol.config[CONFIG_AGENT][agent_id].get("balance", {})
     diff = 0.0
-    for token_name, current in lending_protocol.agent_balance[agent_id].items():
-        diff += (current - initial_balance.get(token_name, 0)) * lending_protocol.market.get_token(token_name).get_price()
+    for token_name, current in env.agent_balance[agent_id].items():
+        diff += (current - env.previous_agent_balance[agent_id].get(token_name, 0)) * env.market.get_token(token_name).get_price()
     return diff

@@ -1,4 +1,5 @@
 import gym
+import copy
 import torch
 import logging
 from typing import Tuple, Optional, Union, List, Dict
@@ -44,6 +45,7 @@ class MultiAgentEnv(gym.Env):
 
         # Initialize agent balances
         self.agent_balance: List[Dict] = self._initialize_agent_balance()
+        self.previous_agent_balance = copy.deepcopy(self.agent_balance)
 
         # Interact with lending_protocol
         agent_observation_space = [AGENT_OBSERVATION_SPACE(len(self.lending_protocol.plf_pools)) for _ in self.agent_mask]
@@ -60,6 +62,7 @@ class MultiAgentEnv(gym.Env):
         lp_state = self.lending_protocol.reset()
         market_state = self.market.reset()
         self.agent_balance = self._initialize_agent_balance()
+        self.previous_agent_balance = self.agent_balance.copy()
 
         # Append the agents state
         agent_state = self._get_agent_state()
@@ -105,9 +108,11 @@ class MultiAgentEnv(gym.Env):
 
         # 3) Collect the rewards for all
         reward = torch.Tensor([
-            reward_function(i, args[0], self.lending_protocol, args[1])
+            reward_function(i, args[0], self, args[1])
             for i, args in enumerate(zip(self.agent_reward, action_feedback))
         ])
+
+        self.previous_agent_balance = copy.deepcopy(self.agent_balance)
 
         return (
             state,                           # Observation State
