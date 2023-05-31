@@ -31,7 +31,7 @@
     {
       "name": "GovAgent",
       "type": "governance",
-      "reward": [[0.5, "protocol_revenue"], [0.5, "profit"]],
+      "reward": [[1, "profit"]],
       "lr": 0.01
     },
     {
@@ -46,10 +46,10 @@
     }
   ],
   "parameter": {
-    "n_rollout_threads": 1,
+    "n_rollout_threads": 12,
     "buffer_length": 2048,
     "n_episodes": 5020,
-    "episode_length": 64,
+    "episode_length": 128,
     "batch_size": 1024,
     "save_interval": 500,
     "attend_heads": 4,
