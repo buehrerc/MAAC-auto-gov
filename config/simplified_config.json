@@ -13,45 +13,78 @@
       }
     ]
   },
-  "lending_protocol": {
-    "plf_pool": [
+  "lending_protocol": [
       {
-        "token_name": "TKN",
-        "initial_starting_funds": 5000,
-        "collateral_factor": 0.85
-      },
-      {
-        "token_name": "USDC",
-        "initial_starting_funds": 150000,
-        "collateral_factor": 0.85
-      }
-    ]
-  },
+        "name": "lending_protocol_1",
+        "plf_pool": [
+          {
+            "token_name": "TKN",
+            "initial_starting_funds": 5000,
+            "collateral_factor": 0.85
+          },
+          {
+            "token_name": "USDC",
+            "initial_starting_funds": 150000,
+            "collateral_factor": 0.85
+          }
+        ]
+    },
+    {
+        "name": "lending_protocol_2",
+        "plf_pool": [
+          {
+            "token_name": "TKN",
+            "initial_starting_funds": 150000,
+            "collateral_factor": 0.85
+          },
+          {
+            "token_name": "USDC",
+            "initial_starting_funds": 5000,
+            "collateral_factor": 0.85
+          }
+        ]
+    }
+  ],
   "agent": [
     {
-      "name": "GovAgent",
+      "name": "GovAgent1",
+      "protocol": "lending_protocol_1",
       "type": "governance",
       "reward": [[1, "profit"]],
-      "lr": 0.01
+      "lr": 0.01,
+      "hidden_dim": 64,
+      "onehot_dim": 0
+    },
+    {
+      "name": "GovAgent2",
+      "protocol": "lending_protocol_2",
+      "type": "governance",
+      "reward": [[1, "profit"]],
+      "lr": 0.01,
+      "hidden_dim": 64,
+      "onehot_dim": 0
     },
     {
       "name": "UserAgent",
       "type": "user",
-      "reward": [[0.3, "maximum_exposure"], [0.7, "profit"]],
+      "reward": [[0.5, "maximum_exposure"], [0.5, "profit"]],
       "lr": 0.01,
+      "hidden_dim": 64,
+      "onehot_dim": 0,
       "balance": {
-        "TKN": 10000,
-        "USDC": 50000
+        "TKN": 1000,
+        "USDC": 5000,
+        "WETH": 1000
       }
     }
   ],
   "parameter": {
     "n_rollout_threads": 12,
     "buffer_length": 2048,
-    "n_episodes": 5020,
+    "n_episodes": 20020,
     "episode_length": 128,
     "batch_size": 1024,
-    "save_interval": 500,
+    "save_interval": 2500,
     "attend_heads": 4,
     "pi_lr": 0.01,
     "q_lr": 0.01,
