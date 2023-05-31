@@ -26,12 +26,12 @@ def combine_observation_space(obj_list: List[object], obs_spaces: List[spaces.Sp
 
 def generate_state_mapping(env_config) -> List[str]:
     token_num = len(env_config[CONFIG_MARKET][CONFIG_TOKEN])
-    plf_num = len(env_config[CONFIG_LENDING_PROTOCOL][CONFIG_PLF_POOL])
+    plf_num = [len(lending_protocol[CONFIG_PLF_POOL]) for lending_protocol in env_config[CONFIG_LENDING_PROTOCOL]]
     agent_num = len(env_config[CONFIG_AGENT])
     return ENVIRONMENT_STATES(agent_num, token_num, plf_num)
 
 
-def encode_action(num_plf_pools) -> (spaces.Space, Dict):
+def encode_action(num_plf_pools: List[int]) -> (spaces.Space, Dict):
     encoding = {
         CONFIG_AGENT_TYPE_GOVERNANCE: encode_governance_action(num_plf_pools),
         CONFIG_AGENT_TYPE_USER: encode_user_action(num_plf_pools)
@@ -70,7 +70,7 @@ def encode_governance_action(num_plf_pools: int) -> Dict[int, Tuple]:
     return encoding
 
 
-def encode_user_action(num_plf_pools: int) -> Dict[int, Tuple]:
+def encode_user_action(plf_pool_in_lp: List[int]) -> Dict[int, Tuple]:
     """
     ENCODING CONVENTIONS:
     > USER AGENT:
@@ -90,16 +90,17 @@ def encode_user_action(num_plf_pools: int) -> Dict[int, Tuple]:
     """
     encoding = dict()
     i = 1
-    encoding[0] = (0, None, None)
-    for n in range(num_plf_pools):
-        encoding[i] = (1, None, n)      # Deposit
-        encoding[i+1] = (2, None, n)    # Withdraw
-        encoding[i+2] = (5, None, n)    # Liquidate
-        i += 3
-        for m in range(num_plf_pools):
-            if m == n:
-                continue
-            encoding[i] = (3, n, m)     # Borrow
-            encoding[i+1] = (4, n, m)   # Repay
-            i += 2
+    encoding[0] = (0, None, None, None)
+    for i_lp, num_plf_pools in enumerate(plf_pool_in_lp):
+        for n in range(num_plf_pools):
+            encoding[i] = (1, i_lp, None, n)      # Deposit
+            encoding[i+1] = (2, i_lp, None, n)    # Withdraw
+            encoding[i+2] = (5, i_lp, None, n)    # Liquidate
+            i += 3
+            for m in range(num_plf_pools):
+                if m == n:
+                    continue
+                encoding[i] = (3, i_lp, n, m)     # Borrow
+                encoding[i+1] = (4, i_lp, n, m)   # Repay
+                i += 2
     return encoding

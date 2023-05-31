@@ -30,12 +30,16 @@ class LendingProtocol:
 
     def __init__(
         self,
+        name: str,
         owner: int,
         market: Market,
+        plf_pool: List[Dict],
         config: Dict,
     ):
+        self.name = name
         self.owner = owner
         self.market = market
+        self.plf_pool_config = plf_pool
         self.config = config
 
         # Protocol Book-keeping
@@ -67,7 +71,7 @@ class LendingProtocol:
         self.plf_pools = list(
             map(
                 lambda params: PLFPool(market=self.market, **params),
-                self.config[CONFIG_LENDING_PROTOCOL][CONFIG_PLF_POOL]
+                self.plf_pool_config
             )
         )
         # Based on the reinitialized plf pools -> compute observation and action space
@@ -142,6 +146,9 @@ class LendingProtocol:
 
     def set_agent_balance(self, agent_balance: List[Dict]) -> None:
         self.agent_balance = agent_balance
+
+    def get_name(self) -> str:
+        return self.name
 
 # =====================================================================================================================
 #   AGENT ACTIONS
@@ -390,4 +397,4 @@ class LendingProtocol:
         return False
 
     def __repr__(self):
-        return "LendingProtocol(" + repr(self.plf_pools) + ")"
+        return f"LendingProtocol(name: '{self.name}', " + repr(self.plf_pools) + ")"

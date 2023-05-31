@@ -53,18 +53,18 @@ def reward_function_by_type(
     :return: reward
     """
     if reward_type == REWARD_TYPE_PROTOCOL_REVENUE:
-        return protocol_revenue(agent_id, env, illegal_action)
+        return protocol_revenue(env, agent_id, illegal_action)
     elif reward_type == REWARD_TYPE_MAXIMUM_EXPOSURE:
-        return maximum_exposure(agent_id, env, illegal_action)
+        return maximum_exposure(env, agent_id, illegal_action)
     elif reward_type == REWARD_TYPE_PROFIT:
-        return profit(agent_id, env, illegal_action)
+        return profit(env, agent_id, illegal_action)
     else:
         raise NotImplementedError("Reward function {} is unknown".format(reward_type))
 
 
 def protocol_revenue(
-    agent_id: int,
     env,
+    agent_id: int,
     illegal_action: bool
 ) -> float:
     """
@@ -78,15 +78,16 @@ def protocol_revenue(
     if illegal_action:
         return REWARD_ILLEGAL_ACTION
 
-    assert env.lending_protocol.owner == agent_id, f"Agent {agent_id} is not owner of the lending protocol"
+    lending_protocol = env.get_protocol_of_owner(agent_id)
+    assert lending_protocol.owner == agent_id, f"Agent {agent_id} is not owner of the lending protocol"
 
     return sum([plf_pool.get_revenue() if plf_pool.reserve > 0 else REWARD_ILLEGAL_ACTION
-                for plf_pool in env.lending_protocol.plf_pools])
+                for plf_pool in lending_protocol.plf_pools])
 
 
 def maximum_exposure(
-    agent_id: int,
     env,
+    agent_id: int,
     illegal_action: bool
 ) -> float:
     """
@@ -98,15 +99,16 @@ def maximum_exposure(
         return REWARD_ILLEGAL_ACTION
 
     total_exposure = 0.0
-    for agent_id, pool_collateral, pool_loan in list(filter(lambda x: x[0] == agent_id, env.lending_protocol.borrow_record)):
-        for borrow_hash, _ in env.lending_protocol.borrow_record[(agent_id, pool_collateral, pool_loan)]:
-            total_exposure += env.lending_protocol.plf_pools[pool_loan].get_borrow(borrow_hash) * env.lending_protocol.plf_pools[pool_loan].get_token_price()
+    for lending_protocol in env.lending_protocol:
+        for agent_id, pool_collateral, pool_loan in list(filter(lambda x: x[0] == agent_id, lending_protocol.borrow_record)):
+            for borrow_hash, _ in lending_protocol.borrow_record[(agent_id, pool_collateral, pool_loan)]:
+                total_exposure += lending_protocol.plf_pools[pool_loan].get_borrow(borrow_hash) * lending_protocol.plf_pools[pool_loan].get_token_price()
     return total_exposure
 
 
 def profit(
-    agent_id: int,
     env,
+    agent_id: int,
     illegal_action: bool,
 ) -> float:
     """

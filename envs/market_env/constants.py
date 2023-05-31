@@ -6,11 +6,13 @@ CONFIG_LENDING_PROTOCOL = "lending_protocol"
 CONFIG_MARKET = "market"
 CONFIG_TOKEN = "token"
 CONFIG_PLF_POOL = "plf_pool"
+CONFIG_LP_NAME = "name"
 CONFIG_PARAM = "parameter"
 CONFIG_AGENT = "agent"
 CONFIG_AGENT_TYPE = "type"
 CONFIG_AGENT_TYPE_GOVERNANCE = "governance"
 CONFIG_AGENT_TYPE_USER = "user"
+CONFIG_AGENT_PROTOCOL = "protocol"
 CONFIG_AGENT_BALANCE = "balance"
 CONFIG_AGENT_REWARD = "reward"
 
@@ -120,17 +122,17 @@ MARKET_STATES = lambda token_num: sum([
 ], [])
 
 # 4.5) Agents
-AGENT_OBSERVATION_SPACE = lambda num_plf_pools: spaces.Box(low=np.array([-np.inf] * num_plf_pools),
-                                                           high=np.array([np.inf] * num_plf_pools),
-                                                           dtype=np.float32)
+AGENT_OBSERVATION_SPACE = lambda num_tokens: spaces.Box(low=np.array([-np.inf] * num_tokens),
+                                                        high=np.array([np.inf] * num_tokens),
+                                                        dtype=np.float32)
 AGENT_STATES = lambda agent_number, token_num: [
     f"agent{agent_number}/token_{i}_balance"
     for i in range(token_num)
 ]
 
 # 4.6) Environment
-ENVIRONMENT_STATES = lambda agent_num, token_num, plf_num: sum([
-    LP_STATES(plf_num),
+ENVIRONMENT_STATES = lambda agent_num, token_num, plf_in_lp_num: sum([
+    [f"lp_{lp_num}_" + state for lp_num, plf_num in enumerate(plf_in_lp_num) for state in LP_STATES(plf_num)],
     MARKET_STATES(token_num),
     sum([AGENT_STATES(i, token_num) for i in range(agent_num)], [])
 ], [])
