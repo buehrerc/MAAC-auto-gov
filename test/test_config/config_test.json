@@ -18,30 +18,34 @@
       }
     ]
   },
-  "lending_protocol": {
-    "plf_pool": [
-      {
-        "token_name": "TKN",
-        "initial_starting_funds": 5000,
-        "collateral_factor": 0.85
-      },
-      {
-        "token_name": "USDC",
-        "initial_starting_funds": 150000,
-        "collateral_factor": 0.85
-      },
-      {
-        "token_name": "WETH",
-        "initial_starting_funds": 15000,
-        "collateral_factor": 0.85
-      }
-    ]
-  },
+  "lending_protocol": [
+    {
+      "name": "TestProtocol",
+      "plf_pool": [
+        {
+          "token_name": "TKN",
+          "initial_starting_funds": 5000,
+          "collateral_factor": 0.85
+        },
+        {
+          "token_name": "USDC",
+          "initial_starting_funds": 150000,
+          "collateral_factor": 0.85
+        },
+        {
+          "token_name": "WETH",
+          "initial_starting_funds": 15000,
+          "collateral_factor": 0.85
+        }
+      ]
+    }
+  ],
   "agent": [
     {
       "name": "GovAgent",
+      "protocol": "TestProtocol",
       "type": "governance",
-      "reward": "protocol_revenue",
+      "reward": [[1, "protocol_revenue"]],
       "lr": 0.01,
       "hidden_dim": 64,
       "onehot_dim": 0
@@ -49,7 +53,7 @@
     {
       "name": "UserAgent",
       "type": "user",
-      "reward": "maximum_exposure",
+      "reward": [[1, "maximum_exposure"]],
       "lr": 0.01,
       "hidden_dim": 64,
       "onehot_dim": 0,

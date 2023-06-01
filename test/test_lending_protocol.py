@@ -21,7 +21,7 @@ class TestLendingProtocol(TestCase):
 
         self.env = MultiAgentEnv(config=self.config, seed=0)
         self.env.reset()
-        self.lending_protocol = self.env.lending_protocol
+        self.lending_protocol = self.env.lending_protocol[0]
 
     def test_initialization(self):
         self.assertEqual(len(self.lending_protocol.plf_pools), 3)
