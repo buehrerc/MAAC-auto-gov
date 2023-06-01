@@ -90,6 +90,7 @@ class Token:
         price: float = 1000.0,
         borrow_interest_rate: float = 0.05,
         supply_interest_rate: float = 0.15,
+        collateral_factor: float = 0.85,
         asset_volatility: float = 0.1,
         seed: int = 0
     ) -> None:
@@ -110,6 +111,7 @@ class Token:
         self.price = price
         self.borrow_interest_rate = borrow_interest_rate
         self.supply_interest_rate = supply_interest_rate
+        self.collateral_factor = collateral_factor
         self.asset_volatility = asset_volatility
         self.rng = np.random.RandomState(seed)
 
@@ -132,6 +134,9 @@ class Token:
 
     def get_supply_interest_rate(self):
         return self.supply_interest_rate
+
+    def get_collateral_factor(self):
+        return self.collateral_factor
 
     def update(self) -> torch.Tensor:
         # Asset price adheres geometric Brownian motion with zero drift

@@ -77,7 +77,7 @@
     {
       "name": "UserAgent",
       "type": "user",
-      "reward": [[1,"maximum_exposure"]],
+      "reward": [[1,"opportunity_cost"]],
       "lr": 0.01,
       "hidden_dim": 64,
       "onehot_dim": 0,

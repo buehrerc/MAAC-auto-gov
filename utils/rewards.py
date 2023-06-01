@@ -1,11 +1,11 @@
 from typing import List, Tuple
 
 from envs.market_env.constants import (
-    CONFIG_AGENT,
     REWARD_TYPE_PROTOCOL_REVENUE,
     REWARD_TYPE_MAXIMUM_EXPOSURE,
     REWARD_TYPE_PROFIT,
-    REWARD_ILLEGAL_ACTION
+    REWARD_ILLEGAL_ACTION,
+    REWARD_TYPE_OPPORTUNITY_COST
 )
 
 
@@ -44,6 +44,8 @@ def reward_function_by_type(
     Supported reward_types:
         + protocol_revenue
         + maximum_exposure
+        + profit
+        + opportunity_cost
 
     :param agent_id: Id of agent whose reward is computed
     :param reward_type: name of the reward function
@@ -58,6 +60,8 @@ def reward_function_by_type(
         return maximum_exposure(env, agent_id, illegal_action)
     elif reward_type == REWARD_TYPE_PROFIT:
         return profit(env, agent_id, illegal_action)
+    elif reward_type == REWARD_TYPE_OPPORTUNITY_COST:
+        return opportunity_cost(env, agent_id, illegal_action)
     else:
         raise NotImplementedError("Reward function {} is unknown".format(reward_type))
 
@@ -123,3 +127,52 @@ def profit(
     for token_name, current in env.agent_balance[agent_id].items():
         diff += (current - env.previous_agent_balance[agent_id].get(token_name, 0)) * env.market.get_token(token_name).get_price()
     return diff
+
+
+def opportunity_cost(
+    env,
+    agent_id: int,
+    illegal_action: bool,
+) -> float:
+    """
+    Function computes the opportunity cost of the agent's investments.
+    It incorporates the opportunity cost of the supplied tokens and borrowed tokens
+    based on the interest rate and collateral factor
+    """
+    ALPHA = 0.5
+    BETA = 0.5
+
+    best_supply_pool = max(
+        [pool.supply_interest_rate for lp in env.lending_protocol for pool in lp.plf_pools] +
+        [token.get_supply_interest_rate() for token in env.market.tokens.values()]
+    )
+    borrow_pools = (
+        [(pool.borrow_interest_rate, pool.collateral_factor)
+         for lp in env.lending_protocol for pool in lp.plf_pools] +
+        [(token.get_borrow_interest_rate(), token.get_collateral_factor())
+         for token in env.market.tokens.values()]
+    )
+    borrow_pools_ratios = [ALPHA * bir + BETA * 1/cf for bir, cf in borrow_pools]
+    best_borrow_pool = borrow_pools[borrow_pools_ratios.index(min(borrow_pools_ratios))]
+
+    opportunity_value = 0
+    for lending_protocol in env.lending_protocol:
+        # Check for supply opportunity cost
+        for agent_id, pool_supply in list(filter(lambda x: x[0] == agent_id, lending_protocol.supply_record)):
+            for supply_hash, supply_amount in lending_protocol.supply_record[(agent_id, pool_supply)]:
+                # supply_amount = lending_protocol.plf_pools[pool_supply].get_supply(supply_hash)
+                supply_price = lending_protocol.plf_pools[pool_supply].get_token_price()
+                opportunity_ratio = lending_protocol.plf_pools[pool_supply].supply_interest_rate - best_supply_pool
+                opportunity_value += supply_amount * supply_price * opportunity_ratio
+        # Check for borrow opportunity cost
+        for agent_id, pool_collateral, pool_loan in list(filter(lambda x: x[0] == agent_id, lending_protocol.borrow_record)):
+            for borrow_hash, borrow_amount in lending_protocol.borrow_record[(agent_id, pool_collateral, pool_loan)]:
+                # borrow_amount = lending_protocol.plf_pools[pool_collateral].get_borrow(borrow_hash)
+                borrow_price = lending_protocol.plf_pools[pool_collateral].get_token_price()
+                ratio = 0
+                if lending_protocol.plf_pools[pool_collateral].collateral_factor - best_borrow_pool[1] != 0:
+                    ratio = 1/(lending_protocol.plf_pools[pool_collateral].collateral_factor - best_borrow_pool[1])
+                opportunity_ratio = ALPHA * (best_borrow_pool[0] - lending_protocol.plf_pools[pool_collateral].borrow_interest_rate) + \
+                                    BETA * ratio
+                opportunity_value += borrow_amount * borrow_price * opportunity_ratio
+    return opportunity_value
