@@ -14,17 +14,32 @@
     ]
   },
   "lending_protocol": [
-      {
-        "name": "lending_protocol_1",
+    {
+      "name": "lending_protocol_1",
+      "plf_pool": [
+        {
+          "token_name": "TKN",
+          "initial_starting_funds": 5000,
+          "collateral_factor": 0.85
+        },
+        {
+          "token_name": "USDC",
+          "initial_starting_funds": 150000,
+          "collateral_factor": 0.85
+        }
+      ]
+    },
+    {
+        "name": "lending_protocol_2",
         "plf_pool": [
           {
             "token_name": "TKN",
-            "initial_starting_funds": 5000,
+            "initial_starting_funds": 10000,
             "collateral_factor": 0.85
           },
           {
             "token_name": "USDC",
-            "initial_starting_funds": 150000,
+            "initial_starting_funds": 10000,
             "collateral_factor": 0.85
           }
         ]
@@ -41,7 +56,29 @@
       "onehot_dim": 0
     },
     {
-      "name": "UserAgent",
+      "name": "GovAgent2",
+      "protocol": "lending_protocol_2",
+      "type": "governance",
+      "reward": [[1, "profit"]],
+      "lr": 0.01,
+      "hidden_dim": 64,
+      "onehot_dim": 0
+    },
+    {
+      "name": "UserAgent1",
+      "type": "user",
+      "reward": [[1, "opportunity_cost"]],
+      "lr": 0.01,
+      "hidden_dim": 64,
+      "onehot_dim": 0,
+      "balance": {
+        "TKN": 1000,
+        "USDC": 5000,
+        "WETH": 1000
+      }
+    },
+    {
+      "name": "UserAgent2",
       "type": "user",
       "reward": [[1, "opportunity_cost"]],
       "lr": 0.01,
@@ -57,10 +94,10 @@
   "parameter": {
     "n_rollout_threads": 12,
     "buffer_length": 2048,
-    "n_episodes": 5000,
-    "episode_length": 100,
+    "n_episodes": 25020,
+    "episode_length": 128,
     "batch_size": 1024,
-    "save_interval": 2500,
+    "save_interval": 5000,
     "attend_heads": 4,
     "pi_lr": 0.01,
     "q_lr": 0.01,
