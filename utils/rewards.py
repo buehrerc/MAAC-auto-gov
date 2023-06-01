@@ -139,8 +139,13 @@ def opportunity_cost(
     It incorporates the opportunity cost of the supplied tokens and borrowed tokens
     based on the interest rate and collateral factor
     """
-    ALPHA = 0.5
-    BETA = 0.5
+    # If an illegal action was picked, the agent gets a punishment
+    if illegal_action:
+        return REWARD_ILLEGAL_ACTION
+
+    # Reward function constants for now
+    ALPHA = 1
+    BETA = 0.1
 
     best_supply_pool = max(
         [pool.supply_interest_rate for lp in env.lending_protocol for pool in lp.plf_pools] +
