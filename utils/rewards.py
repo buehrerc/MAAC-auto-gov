@@ -5,7 +5,12 @@ from envs.market_env.constants import (
     REWARD_TYPE_MAXIMUM_EXPOSURE,
     REWARD_TYPE_PROFIT,
     REWARD_ILLEGAL_ACTION,
-    REWARD_TYPE_OPPORTUNITY_COST
+    REWARD_TYPE_OPPORTUNITY_COST,
+    REWARD_TYPE_SUPPLY_EXPOSURE,
+    REWARD_CONSTANT_OPPORTUNITY_ALPHA,
+    REWARD_CONSTANT_OPPORTUNITY_BETA,
+    REWARD_CONSTANT_SUPPLY_LP_ID,
+    REWARD_CONSTANT_SUPPLY_PLF_ID,
 )
 
 
@@ -14,7 +19,7 @@ def reward_function(
     reward_type: List[Tuple],
     env,
     illegal_action: bool,
-):
+) -> float:
     """
 
     Supported reward_types:
@@ -29,8 +34,12 @@ def reward_function(
                            False: Agent didn't perform an illegal action
     :return: reward
     """
+    # If an illegal action was picked, the agent gets a punishment
+    if illegal_action:
+        return REWARD_ILLEGAL_ACTION
+
     return sum([
-        weight * reward_function_by_type(agent_id, rt, env, illegal_action) for weight, rt in reward_type
+        weight * reward_function_by_type(agent_id, rt, env) for weight, rt in reward_type
     ])
 
 
@@ -38,7 +47,6 @@ def reward_function_by_type(
     agent_id: int,
     reward_type: str,
     env,
-    illegal_action: bool
 ) -> float:
     """
     Supported reward_types:
@@ -55,13 +63,15 @@ def reward_function_by_type(
     :return: reward
     """
     if reward_type == REWARD_TYPE_PROTOCOL_REVENUE:
-        return protocol_revenue(env, agent_id, illegal_action)
+        return protocol_revenue(env, agent_id)
     elif reward_type == REWARD_TYPE_MAXIMUM_EXPOSURE:
-        return maximum_exposure(env, agent_id, illegal_action)
+        return maximum_exposure(env, agent_id)
     elif reward_type == REWARD_TYPE_PROFIT:
-        return profit(env, agent_id, illegal_action)
+        return profit(env, agent_id)
     elif reward_type == REWARD_TYPE_OPPORTUNITY_COST:
-        return opportunity_cost(env, agent_id, illegal_action)
+        return opportunity_cost(env, agent_id)
+    elif reward_type == REWARD_TYPE_SUPPLY_EXPOSURE:
+        return supply_exposure(env, agent_id)
     else:
         raise NotImplementedError("Reward function {} is unknown".format(reward_type))
 
@@ -69,7 +79,6 @@ def reward_function_by_type(
 def protocol_revenue(
     env,
     agent_id: int,
-    illegal_action: bool
 ) -> float:
     """
     Function calculates the lending protocol's revenue by computing the revenue of each plf_pool
@@ -78,10 +87,6 @@ def protocol_revenue(
     plf_pool_revenue = plf_reserve[t] * token_price[t] - plf_reserve[t-1] * token_price[t-1]
     where, plf_reserve[t] = supply_token[t] - borrow_token[t] = available_funds[t]
     """
-    # If an illegal action was picked, the agent gets a punishment
-    if illegal_action:
-        return REWARD_ILLEGAL_ACTION
-
     lending_protocol = env.get_protocol_of_owner(agent_id)
     assert lending_protocol.owner == agent_id, f"Agent {agent_id} is not owner of the lending protocol"
 
@@ -92,16 +97,11 @@ def protocol_revenue(
 def maximum_exposure(
     env,
     agent_id: int,
-    illegal_action: bool
 ) -> float:
     """
     Function computes the maximum exposure of an agent towards a lending protocol.
     The maximum exposure can be understood as the total value of all the borrowed funds.
     """
-    # If an illegal action was picked, the agent gets a punishment
-    if illegal_action:
-        return REWARD_ILLEGAL_ACTION
-
     total_exposure = 0.0
     for lending_protocol in env.lending_protocol:
         for agent_id, pool_collateral, pool_loan in list(filter(lambda x: x[0] == agent_id, lending_protocol.borrow_record)):
@@ -113,16 +113,11 @@ def maximum_exposure(
 def profit(
     env,
     agent_id: int,
-    illegal_action: bool,
 ) -> float:
     """
     Function rewards the profit of an agent.
     profit = balance[t] - balance[t-1]
     """
-    # If an illegal action was picked, the agent gets a punishment
-    if illegal_action:
-        return REWARD_ILLEGAL_ACTION
-
     diff = 0.0
     for token_name, current in env.agent_balance[agent_id].items():
         diff += (current - env.previous_agent_balance[agent_id].get(token_name, 0)) * env.market.get_token(token_name).get_price()
@@ -132,21 +127,14 @@ def profit(
 def opportunity_cost(
     env,
     agent_id: int,
-    illegal_action: bool,
+    alpha: float = REWARD_CONSTANT_OPPORTUNITY_ALPHA,
+    beta: float = REWARD_CONSTANT_OPPORTUNITY_BETA
 ) -> float:
     """
     Function computes the opportunity cost of the agent's investments.
     It incorporates the opportunity cost of the supplied tokens and borrowed tokens
     based on the interest rate and collateral factor
     """
-    # If an illegal action was picked, the agent gets a punishment
-    if illegal_action:
-        return REWARD_ILLEGAL_ACTION
-
-    # Reward function constants for now
-    ALPHA = 1
-    BETA = 0.1
-
     best_supply_pool = max(
         [pool.supply_interest_rate for lp in env.lending_protocol for pool in lp.plf_pools] +
         [token.get_supply_interest_rate() for token in env.market.tokens.values()]
@@ -157,7 +145,7 @@ def opportunity_cost(
         [(token.get_borrow_interest_rate(), token.get_collateral_factor())
          for token in env.market.tokens.values()]
     )
-    borrow_pools_ratios = [ALPHA * bir + BETA * 1/cf for bir, cf in borrow_pools]
+    borrow_pools_ratios = [alpha * bir + beta * 1/cf for bir, cf in borrow_pools]
     best_borrow_pool = borrow_pools[borrow_pools_ratios.index(min(borrow_pools_ratios))]
 
     opportunity_value = 0
@@ -177,7 +165,24 @@ def opportunity_cost(
                 ratio = 0
                 if lending_protocol.plf_pools[pool_collateral].collateral_factor - best_borrow_pool[1] != 0:
                     ratio = 1/(lending_protocol.plf_pools[pool_collateral].collateral_factor - best_borrow_pool[1])
-                opportunity_ratio = ALPHA * (best_borrow_pool[0] - lending_protocol.plf_pools[pool_collateral].borrow_interest_rate) + \
-                                    BETA * ratio
+                opportunity_ratio = alpha * (best_borrow_pool[0] - lending_protocol.plf_pools[pool_collateral].borrow_interest_rate) + \
+                                    beta * ratio
                 opportunity_value += borrow_amount * borrow_price * opportunity_ratio
     return opportunity_value
+
+
+def supply_exposure(
+    env,
+    agent_id: int,
+    lending_protocol_id: int = REWARD_CONSTANT_SUPPLY_LP_ID,
+    plf_pool_id: int = REWARD_CONSTANT_SUPPLY_PLF_ID,
+) -> float:
+    """
+    Function rewards exposure to a specific supply pool of a specific protocol
+    """
+    exposure = 0.0
+    lending_protocol = env.lending_protocol[lending_protocol_id]
+    for supply_hash, supply_amount in lending_protocol.supply_record.get((agent_id, plf_pool_id), []):
+        plf_pool = lending_protocol.plf_pools[plf_pool_id]
+        exposure += plf_pool.get_supply(supply_hash) * plf_pool.get_token_price()
+    return exposure

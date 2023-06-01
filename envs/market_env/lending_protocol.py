@@ -12,8 +12,6 @@ from envs.market_env.utils import (
     combine_observation_space,
 )
 from envs.market_env.constants import (
-    CONFIG_LENDING_PROTOCOL,
-    CONFIG_PLF_POOL,
     CONFIG_AGENT,
     CONFIG_AGENT_TYPE,
     LP_BORROW_SAFETY_MARGIN,

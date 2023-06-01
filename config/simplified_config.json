@@ -67,7 +67,7 @@
     {
       "name": "UserAgent1",
       "type": "user",
-      "reward": [[1, "opportunity_cost"]],
+      "reward": [[1, "supply_exposure"]],
       "lr": 0.01,
       "hidden_dim": 64,
       "onehot_dim": 0,
