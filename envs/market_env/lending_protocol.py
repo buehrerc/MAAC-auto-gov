@@ -347,6 +347,13 @@ class LendingProtocol:
         # 3) Repay the loan funds
         liquidated_agent_id, pool_collateral, pool_loan = borrow_key
         loan_amount = self.plf_pools[pool_loan].get_borrow(loan_hash)
+        if loan_amount is None:
+            logging.debug(
+                f"Agent {agent_id} tried to liquidate pool {pool_loan} "
+                f"but another agent has already liquidated the loan."
+            )
+            # Since this is per se not an illegal action -> we leave it as a valid action without an effect
+            return False
         # Remove funds from the agent
         feedback = self._remove_agent_funds(agent_id, pool_loan, loan_amount)
         if feedback:
