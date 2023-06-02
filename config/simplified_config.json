@@ -73,7 +73,7 @@
     "n_episodes": 5050,
     "episode_length": 128,
     "batch_size": 1024,
-    "save_interval": 5000,
+    "save_interval": 500,
     "attend_heads": 4,
     "pi_lr": 0.01,
     "q_lr": 0.01,
