@@ -128,6 +128,9 @@ class LendingProtocol:
         return (collateral_amount * collateral_price * collateral_factor) / (loan_amount * loan_price)
 
     def _update_health_factor(self, idx):
+        """
+        Function retrieves the loan of each plf pool with the lowest health factor
+        """
         loan_in_pool = list(filter(lambda x: x[2] == idx, self.borrow_record.keys()))
         if len(loan_in_pool) == 0:
             return None

@@ -135,6 +135,7 @@ class MultiAgentEnv(gym.Env):
             for i, args in enumerate(zip(self.agent_reward, action_feedback))
         ])
 
+        # 4) Store the state of the environment
         self.previous_agent_balance = copy.deepcopy(self.agent_balance)
 
         return (
@@ -145,8 +146,7 @@ class MultiAgentEnv(gym.Env):
         )
 
     def _get_agent_state(self) -> torch.Tensor:
-        agent_state = sum([list(balance.values()) for balance in self.agent_balance], [])
-        return torch.Tensor(agent_state)
+        return torch.Tensor(sum([list(balance.values()) for balance in self.agent_balance], []))
 
     def _set_action(self, action_list: torch.Tensor) -> List:
         """
@@ -175,7 +175,7 @@ class MultiAgentEnv(gym.Env):
         :return: True: illegal_action, False: legal_action
         """
         action_id, pool_id = self.action_mapping[agent_id][int(action)]
-        lp = self.get_protocol_of_owner(agent_id)
+        lending_protocol = self.get_protocol_of_owner(agent_id)
 
         if action_id == 0:  # No Action
             logging.debug("Agent {}: No action".format(agent_id, pool_id))
@@ -183,27 +183,27 @@ class MultiAgentEnv(gym.Env):
 
         elif action_id == 1:  # Lower Collateral Factor
             logging.debug("Agent {}: Lower collateral factor of pool {}".format(agent_id, pool_id))
-            return lp.update_collateral_factor(pool_id, -1)
+            return lending_protocol.update_collateral_factor(pool_id, -1)
 
         elif action_id == 2:  # Raise Collteral Factor
             logging.debug("Agent {}: Raise collateral factor of pool {}".format(agent_id, pool_id))
-            return lp.update_collateral_factor(pool_id, 1)
+            return lending_protocol.update_collateral_factor(pool_id, 1)
 
         elif action_id == 3:  # Lower Stable Borrow Slope 1
             logging.debug("Agent {}: Lower stable borrow slope 1 of pool {}".format(agent_id, pool_id))
-            return lp.update_interest_model(pool_id, -1, 0)
+            return lending_protocol.update_interest_model(pool_id, -1, 0)
 
         elif action_id == 4:  # Raise Stable Borrow Slope 1
             logging.debug("Agent {}: Raise stable borrow slope 1 of pool {}".format(agent_id, pool_id))
-            return lp.update_interest_model(pool_id, 1, 0)
+            return lending_protocol.update_interest_model(pool_id, 1, 0)
 
         elif action_id == 5:  # Lower Stable Borrow Slope 2
             logging.debug("Agent {}: Lower stable borrow slope 2 of pool {}".format(agent_id, pool_id))
-            return lp.update_interest_model(pool_id, 0, -1)
+            return lending_protocol.update_interest_model(pool_id, 0, -1)
 
         elif action_id == 6:  # Raise Stable Borrow Slope 2
             logging.debug("Agent {}: Raise stable borrow slope 2 of pool {}".format(agent_id, pool_id))
-            return lp.update_interest_model(pool_id, 0, 1)
+            return lending_protocol.update_interest_model(pool_id, 0, 1)
 
         else:
             raise NotImplementedError("Action Code {} is unknown".format(action_id))

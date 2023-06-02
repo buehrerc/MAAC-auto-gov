@@ -47,8 +47,8 @@ class PLFPool:
         self.base_borrow_rate: float = PLF_BASE_BORROW_RATE
         self.stable_borrow_slope_1: float = PLF_STABLE_BORROW_SLOPE_1
         self.stable_borrow_slope_2: float = PLF_STABLE_BORROW_SLOPE_2
-        # self.variable_borrow_slope_1: float = PLF_VARIABLE_BORROW_SLOPE_1
-        # self.variable_borrow_slope_2: float = PLF_VARIABLE_BORROW_SLOPE_2
+        self.variable_borrow_slope_1: float = PLF_VARIABLE_BORROW_SLOPE_1
+        self.variable_borrow_slope_2: float = PLF_VARIABLE_BORROW_SLOPE_2
 
         # Reward Parameters
         self.previous_reserve_value: float = 0.0
