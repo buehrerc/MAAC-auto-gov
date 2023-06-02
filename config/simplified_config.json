@@ -48,22 +48,8 @@
       "hidden_dim": 64,
       "onehot_dim": 0,
       "balance": {
-        "TKN": 1000,
-        "USDC": 5000,
-        "WETH": 1000
-      }
-    },
-    {
-      "name": "UserAgent2",
-      "type": "user",
-      "reward": [[1, "borrow_exposure"]],
-      "lr": 0.01,
-      "hidden_dim": 64,
-      "onehot_dim": 0,
-      "balance": {
-        "TKN": 1000,
-        "USDC": 5000,
-        "WETH": 1000
+        "TKN": 10000,
+        "USDC": 10000,
       }
     }
   ],
