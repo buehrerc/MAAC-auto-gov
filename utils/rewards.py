@@ -11,6 +11,7 @@ from envs.market_env.constants import (
     REWARD_CONSTANT_OPPORTUNITY_BETA,
     REWARD_CONSTANT_SUPPLY_LP_ID,
     REWARD_CONSTANT_SUPPLY_PLF_ID,
+    REWARD_TYPE_BORROW_EXPOSURE
 )
 
 
@@ -72,6 +73,8 @@ def reward_function_by_type(
         return opportunity_cost(env, agent_id)
     elif reward_type == REWARD_TYPE_SUPPLY_EXPOSURE:
         return supply_exposure(env, agent_id)
+    elif reward_type == REWARD_TYPE_BORROW_EXPOSURE:
+        return borrow_exposure(env, agent_id)
     else:
         raise NotImplementedError("Reward function {} is unknown".format(reward_type))
 
@@ -185,4 +188,21 @@ def supply_exposure(
     for supply_hash, supply_amount in lending_protocol.supply_record.get((agent_id, plf_pool_id), []):
         plf_pool = lending_protocol.plf_pools[plf_pool_id]
         exposure += plf_pool.get_supply(supply_hash) * plf_pool.get_token_price()
+    return exposure
+
+
+def borrow_exposure(
+    env,
+    agent_id: int,
+    lending_protocol_id: int = REWARD_CONSTANT_SUPPLY_LP_ID,
+    plf_pool_id: int = REWARD_CONSTANT_SUPPLY_PLF_ID,
+) -> float:
+    """
+    Function rewards exposure to a specific borrow pool of a specific protocol
+    """
+    exposure = 0.0
+    lending_protocol = env.lending_protocol[lending_protocol_id]
+    for borrow_hash, borrow_amount in lending_protocol.supply_record.get((agent_id, plf_pool_id), []):
+        plf_pool = lending_protocol.plf_pools[plf_pool_id]
+        exposure += plf_pool.get_borrow(borrow_hash) * plf_pool.get_token_price()
     return exposure

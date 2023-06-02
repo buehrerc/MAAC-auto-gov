@@ -43,7 +43,7 @@
     {
       "name": "UserAgent1",
       "type": "user",
-      "reward": [[0.6, "opportunity_cost"], [0.4, "profit"]],
+      "reward": [[1, "supply_exposure"]],
       "lr": 0.01,
       "hidden_dim": 64,
       "onehot_dim": 0,
@@ -56,7 +56,7 @@
     {
       "name": "UserAgent2",
       "type": "user",
-      "reward": [[0.6, "opportunity_cost"], [0.4, "profit"]],
+      "reward": [[1, "borrow_exposure"]],
       "lr": 0.01,
       "hidden_dim": 64,
       "onehot_dim": 0,
@@ -70,7 +70,7 @@
   "parameter": {
     "n_rollout_threads": 12,
     "buffer_length": 2048,
-    "n_episodes": 25020,
+    "n_episodes": 5050,
     "episode_length": 128,
     "batch_size": 1024,
     "save_interval": 5000,

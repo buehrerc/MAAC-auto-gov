@@ -8,7 +8,7 @@
 # -= Resources =-
 #
 #SBATCH --job-name=maac_auto_gov                   # DON'T FORGET TO UPDATE
-#SBATCH --output=output.txt
+#SBATCH --output=output1.txt
 #SBATCH --error=error.txt
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
