@@ -28,21 +28,6 @@
           "collateral_factor": 0.85
         }
       ]
-    },
-    {
-        "name": "lending_protocol_2",
-        "plf_pool": [
-          {
-            "token_name": "TKN",
-            "initial_starting_funds": 10000,
-            "collateral_factor": 0.85
-          },
-          {
-            "token_name": "USDC",
-            "initial_starting_funds": 10000,
-            "collateral_factor": 0.85
-          }
-        ]
     }
   ],
   "agent": [
@@ -56,18 +41,9 @@
       "onehot_dim": 0
     },
     {
-      "name": "GovAgent2",
-      "protocol": "lending_protocol_2",
-      "type": "governance",
-      "reward": [[1, "profit"]],
-      "lr": 0.01,
-      "hidden_dim": 64,
-      "onehot_dim": 0
-    },
-    {
       "name": "UserAgent1",
       "type": "user",
-      "reward": [[1, "supply_exposure"]],
+      "reward": [[0.6, "opportunity_cost"], [0.4, "profit"]],
       "lr": 0.01,
       "hidden_dim": 64,
       "onehot_dim": 0,
@@ -80,7 +56,7 @@
     {
       "name": "UserAgent2",
       "type": "user",
-      "reward": [[1, "opportunity_cost"]],
+      "reward": [[0.6, "opportunity_cost"], [0.4, "profit"]],
       "lr": 0.01,
       "hidden_dim": 64,
       "onehot_dim": 0,
