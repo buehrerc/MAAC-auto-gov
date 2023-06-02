@@ -19,7 +19,7 @@
       "plf_pool": [
         {
           "token_name": "TKN",
-          "initial_starting_funds": 5000,
+          "initial_starting_funds": 100000,
           "collateral_factor": 0.85
         },
         {
@@ -49,6 +49,18 @@
       "onehot_dim": 0,
       "balance": {
         "TKN": 10000,
+        "USDC": 0
+      }
+    },
+    {
+      "name": "UserAgent1",
+      "type": "user",
+      "reward": [[1, "borrow_exposure"]],
+      "lr": 0.01,
+      "hidden_dim": 64,
+      "onehot_dim": 0,
+      "balance": {
+        "TKN": 0,
         "USDC": 10000
       }
     }
