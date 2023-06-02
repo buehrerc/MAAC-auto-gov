@@ -35,7 +35,7 @@
       "name": "GovAgent1",
       "protocol": "lending_protocol_1",
       "type": "governance",
-      "reward": [[1, "profit"]],
+      "reward": [[1, "protocol_revenue"]],
       "lr": 0.01,
       "hidden_dim": 64,
       "onehot_dim": 0
@@ -43,7 +43,7 @@
     {
       "name": "UserAgent1",
       "type": "user",
-      "reward": [[1, "supply_exposure"]],
+      "reward": [[0.8, "opportunity_cost"], [0.2, "profit"]],
       "lr": 0.01,
       "hidden_dim": 64,
       "onehot_dim": 0,
@@ -55,7 +55,7 @@
     {
       "name": "UserAgent1",
       "type": "user",
-      "reward": [[1, "borrow_exposure"]],
+      "reward": [[0.8, "opportunity_cost"], [0.2, "profit"]],
       "lr": 0.01,
       "hidden_dim": 64,
       "onehot_dim": 0,
@@ -68,11 +68,11 @@
   "parameter": {
     "n_rollout_threads": 12,
     "buffer_length": 2048,
-    "n_episodes": 5050,
+    "n_episodes": 50050,
     "episode_length": 128,
     "batch_size": 256,
-    "save_interval": 500,
+    "save_interval": 5000,
     "attend_heads": 4,
-    "reward_scale": 1e-3
+    "reward_scale": 1e-1
   }
 }
