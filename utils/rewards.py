@@ -202,7 +202,7 @@ def borrow_exposure(
     """
     exposure = 0.0
     lending_protocol = env.lending_protocol[lending_protocol_id]
-    for borrow_hash, borrow_amount in lending_protocol.supply_record.get((agent_id, plf_pool_id), []):
+    for borrow_hash, borrow_amount in lending_protocol.borrow_record.get((agent_id, plf_pool_id), []):
         plf_pool = lending_protocol.plf_pools[plf_pool_id]
         exposure += plf_pool.get_borrow(borrow_hash) * plf_pool.get_token_price()
     return exposure
