@@ -117,7 +117,7 @@ def train(
             except AssertionError:
                 logging.info(AssertionError)
                 obs = env.reset()
-                continue
+                break
             replay_buffer.push(obs, agent_actions, rewards, next_obs, dones)
             obs = next_obs
             t += config.n_rollout_threads
