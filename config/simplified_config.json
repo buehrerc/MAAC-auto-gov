@@ -43,19 +43,7 @@
     {
       "name": "UserAgent1",
       "type": "user",
-      "reward": [[0.8, "opportunity_cost"], [0.2, "profit"]],
-      "lr": 0.01,
-      "hidden_dim": 64,
-      "onehot_dim": 0,
-      "balance": {
-        "TKN": 10000,
-        "USDC": 0
-      }
-    },
-    {
-      "name": "UserAgent1",
-      "type": "user",
-      "reward": [[0.8, "opportunity_cost"], [0.2, "profit"]],
+      "reward": [[1, "supply_exposure"]],
       "lr": 0.01,
       "hidden_dim": 64,
       "onehot_dim": 0,
@@ -63,16 +51,29 @@
         "TKN": 0,
         "USDC": 10000
       }
+    },
+    {
+      "name": "UserAgent1",
+      "type": "user",
+      "reward": [[1, "borrow_exposure"]],
+      "lr": 0.01,
+      "hidden_dim": 64,
+      "onehot_dim": 0,
+      "balance": {
+        "TKN": 10000,
+        "USDC": 0
+      }
     }
   ],
   "parameter": {
-    "n_rollout_threads": 12,
+    "n_rollout_threads": 4,
     "buffer_length": 2048,
-    "n_episodes": 50050,
+    "n_episodes": 5010,
     "episode_length": 128,
     "batch_size": 256,
-    "save_interval": 5000,
+    "save_interval": 500,
     "attend_heads": 4,
-    "reward_scale": 1e-1
+    "reward_scale": 1e-1,
+    "seed": 30
   }
 }
