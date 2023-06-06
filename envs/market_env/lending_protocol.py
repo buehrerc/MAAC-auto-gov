@@ -44,8 +44,8 @@ class LendingProtocol:
 
         # Protocol Book-keeping
         self.supply_record: Dict[Tuple, List] = dict()  # dict_keys: (agent_id, pool_id)
-        self.borrow_record: Dict[Tuple, List] = dict()  # dict_keys: (agent_id, loan_collateral, loan_hash)
-        self.worst_loans: Dict[int, Tuple] = dict()   # dict_keys: pool_id, dict_values: (borrow_keys, loan_hash, health_factor)
+        self.borrow_record: Dict[Tuple, List] = dict()  # dict_keys: (agent_id, pool_collateral, pool_loan)
+        self.worst_loans: Dict[int, Tuple] = dict()     # dict_keys: pool_id, dict_values: (borrow_keys, loan_hash, health_factor)
         self.reward: torch.Tensor = torch.Tensor()
 
         # Initialize additional attributes

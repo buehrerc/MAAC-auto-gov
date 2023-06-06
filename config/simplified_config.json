@@ -60,8 +60,8 @@
       "hidden_dim": 128,
       "onehot_dim": 0,
       "balance": {
-        "TKN": 10000,
-        "USDC": 0
+        "TKN": 1e10,
+        "USDC": 1000
       }
     }
   ],
