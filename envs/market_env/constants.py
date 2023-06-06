@@ -1,4 +1,5 @@
 import numpy as np
+from itertools import product
 from gym import spaces
 
 # 1) CONFIG CONVENTIONS
@@ -93,14 +94,25 @@ PLF_STATES = lambda plf_number: [
 ]
 
 # 4.2) LendingProtocol
-LP_OBSERVATION_SPACE = spaces.Box(
+LP_OBSERVATION_SPACE_1 = spaces.Box(
     low=np.array([0]),
     high=np.array([LP_DEFAULT_HEALTH_FACTOR]),
     dtype=np.float32
 )
-LP_STATES = lambda num_plf_pools: sum([
+LP_OBSERVATION_SPACE_2 = spaces.Box(
+    low=np.array([0]),
+    high=np.array([np.inf]),
+    dtype=np.float32
+)
+LP_STATE_RECORD = lambda agent_id, num_plf_pools: sum([
+    [f"pool_{j}/agent_{agent_id}_supply" for j in range(num_plf_pools)],
+    [f"pool_{j}/agent_{agent_id}_pool_{k}_borrow"
+     for j, k in product(range(num_plf_pools), range(num_plf_pools)) if j != k],
+], [])
+LP_STATES = lambda num_plf_pools, num_agent: sum([
     sum([PLF_STATES(i) for i in range(num_plf_pools)], []),
-    [f"pool_{i}/worst_loan" for i in range(num_plf_pools)]
+    [f"pool_{i}/worst_loan" for i in range(num_plf_pools)],
+    sum([LP_STATE_RECORD(i, num_plf_pools) for i in range(num_agent)], [])
 ], [])
 
 # 4.3) Token
@@ -132,7 +144,7 @@ AGENT_STATES = lambda agent_number, token_num: [
 
 # 4.6) Environment
 ENVIRONMENT_STATES = lambda agent_num, token_num, plf_in_lp_num: sum([
-    [f"lp_{lp_num}_" + state for lp_num, plf_num in enumerate(plf_in_lp_num) for state in LP_STATES(plf_num)],
+    [f"lp_{lp_num}_" + state for lp_num, plf_num in enumerate(plf_in_lp_num) for state in LP_STATES(plf_num, agent_num)],
     MARKET_STATES(token_num),
     sum([AGENT_STATES(i, token_num) for i in range(agent_num)], [])
 ], [])

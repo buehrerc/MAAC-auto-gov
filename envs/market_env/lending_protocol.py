@@ -1,10 +1,11 @@
 import logging
 import uuid
+import torch
+import numpy as np
+from itertools import product
 from gym import spaces
 from gym.core import ObsType, RenderFrame
 from typing import Dict, List, Tuple, Optional, Union
-import torch
-import numpy as np
 
 from envs.market_env.market import Market
 from envs.market_env.plf_pool import PLFPool
@@ -16,7 +17,8 @@ from envs.market_env.constants import (
     CONFIG_AGENT_TYPE,
     LP_BORROW_SAFETY_MARGIN,
     LP_LIQUIDATION_PENALTY,
-    LP_OBSERVATION_SPACE,
+    LP_OBSERVATION_SPACE_1,
+    LP_OBSERVATION_SPACE_2,
     LP_DEFAULT_HEALTH_FACTOR, PLF_FEE,
 )
 
@@ -73,7 +75,11 @@ class LendingProtocol:
             )
         )
         # Based on the reinitialized plf pools -> compute observation and action space
-        additional_observation_spaces = [LP_OBSERVATION_SPACE] * len(self.plf_pools)
+        num_plf_pols = len(self.plf_pools)
+        # Worst loan observation space
+        additional_observation_spaces = [LP_OBSERVATION_SPACE_1] * num_plf_pols
+        # observation space for supply and borrow balance of each agent
+        additional_observation_spaces.extend([LP_OBSERVATION_SPACE_2] * (num_plf_pols + num_plf_pols * (num_plf_pols - 1)))
         self.observation_space = combine_observation_space(self.plf_pools, additional_observation_spaces)
 
         # Reset the reward
@@ -82,16 +88,9 @@ class LendingProtocol:
         # Reset all the records
         self.supply_record = dict()
         self.borrow_record = dict()
-        self.worst_loans = {i: self._update_health_factor(i) for i in range(len(self.plf_pools))}
 
-        # Return the state of the pool alongside the remaining return values
-        state = [pool.get_state() for pool in self.plf_pools]
-        state.extend([
-            torch.Tensor([v[2]]) if v is not None else torch.Tensor([LP_DEFAULT_HEALTH_FACTOR])
-            for v in self.worst_loans.values()
-        ])
-
-        return torch.cat(state)
+        # Retrieve the state of the lending protocol by updating it
+        return self.update()
 
     def update(self) -> ObsType:
         """
@@ -106,11 +105,15 @@ class LendingProtocol:
 
         # 2) Compute the lowest health factor for each plf_pool
         self.worst_loans = {i: self._update_health_factor(i) for i in range(len(self.plf_pools))}
+
         # Append them to the state
         pool_states.extend([
             torch.Tensor([v[2]]) if v is not None else torch.Tensor([LP_DEFAULT_HEALTH_FACTOR])
             for v in self.worst_loans.values()
         ])
+
+        # 3) Append the supplies and borrows of each agent as states
+        pool_states.extend([self._get_agent_records(agent_id) for agent_id in range(len(self.agent_mask))])
 
         return torch.cat(pool_states)
 
@@ -127,7 +130,7 @@ class LendingProtocol:
         collateral_factor = self.plf_pools[pool_loan].get_collateral_factor()
         return (collateral_amount * collateral_price * collateral_factor) / (loan_amount * loan_price)
 
-    def _update_health_factor(self, idx):
+    def _update_health_factor(self, idx: int):
         """
         Function retrieves the loan of each plf pool with the lowest health factor
         """
@@ -141,6 +144,21 @@ class LendingProtocol:
         health_factors = list(map(lambda x: self._get_health_factor(*x[1:]), unpacked_pool_loans))
         min_hf_idx = np.argmin(health_factors)
         return unpacked_pool_loans[min_hf_idx][:3], unpacked_pool_loans[min_hf_idx][3], health_factors[min_hf_idx]
+
+    def _get_agent_records(self, agent_id: int) -> torch.Tensor:
+        """
+        Function returns the aggregate of all the supplied and borrowed tokens of the input agent_id
+        """
+        record = list()
+        # 1) Supplied tokens
+        for pool_supply in range(len(self.plf_pools)):
+            record.append(sum(list(map(lambda key: key[1], self.supply_record.get((agent_id, pool_supply), [])))))
+        # 2) Borrowed tokens
+        for pool_loan, pool_collateral in product(range(len(self.plf_pools)), range(len(self.plf_pools))):
+            if pool_loan == pool_collateral:
+                continue
+            record.append(sum(list(map(lambda key: key[1], self.borrow_record.get((agent_id, pool_collateral, pool_loan), [])))))
+        return torch.Tensor(record)
 
     def render(self) -> Optional[Union[RenderFrame, List[RenderFrame]]]:
         pass
