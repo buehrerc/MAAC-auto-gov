@@ -39,7 +39,8 @@ class PLFPool:
         self.collateral_factor: float = collateral_factor
         self.col_factor_change_rate: float = col_factor_change_rate
         self.supply_token: Dict[str, float] = {PLF_INITIATOR: initial_starting_funds}
-        self.borrow_token: Dict[str, float] = {PLF_INITIATOR: initial_starting_funds / 2}
+        # Set the initial utilization ratio to the optimal utilization ratio
+        self.borrow_token: Dict[str, float] = {PLF_INITIATOR: initial_starting_funds * PLF_OPTIMAL_UTILIZATION_RATIO}
 
         # Interest Rate Model
         self.interest_change_rate = interest_change_rate

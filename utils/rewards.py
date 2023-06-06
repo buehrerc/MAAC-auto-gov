@@ -207,6 +207,7 @@ def opportunity_cost_supply_exposure(
     Function rewards exposure to a specific supply pool of a specific protocol
     provided that the supply interest is lower than the competing supply interest
     """
+    # TODO: current implementation does not correspond to the definition in the report
     exposure = 0.0
     lending_protocol = env.lending_protocol[lending_protocol_id]
     for supply_hash, supply_amount in lending_protocol.supply_record.get((agent_id, plf_pool_id), []):
@@ -245,6 +246,7 @@ def opportunity_cost_borrow_exposure(
     Function rewards exposure to a specific borrow pool of a specific protocol
     provided that the supply interest is lower than the competing supply interest
     """
+    # TODO: current implementation does not correspond to the definition in the report
     exposure = 0.0
     lending_protocol = env.lending_protocol[lending_protocol_id]
     for borrow_key in list(filter(lambda keys: keys[0] == agent_id and keys[2] == plf_pool_id,

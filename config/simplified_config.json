@@ -24,7 +24,7 @@
         },
         {
           "token_name": "USDC",
-          "initial_starting_funds": 150000,
+          "initial_starting_funds": 100000,
           "collateral_factor": 0.85
         }
       ]
@@ -66,10 +66,10 @@
     }
   ],
   "parameter": {
-    "n_rollout_threads": 4,
-    "buffer_length": 512,
-    "n_episodes": 5010,
-    "episode_length": 128,
+    "n_rollout_threads": 12,
+    "buffer_length": 2048,
+    "n_episodes": 20030,
+    "episode_length": 64,
     "batch_size": 512,
     "save_interval": 500,
     "attend_heads": 4,
