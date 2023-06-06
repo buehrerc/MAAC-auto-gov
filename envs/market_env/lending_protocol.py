@@ -79,7 +79,9 @@ class LendingProtocol:
         # Worst loan observation space
         additional_observation_spaces = [LP_OBSERVATION_SPACE_1] * num_plf_pols
         # observation space for supply and borrow balance of each agent
-        additional_observation_spaces.extend([LP_OBSERVATION_SPACE_2] * (num_plf_pols + num_plf_pols * (num_plf_pols - 1)))
+        additional_observation_spaces.extend(
+            [LP_OBSERVATION_SPACE_2] * len(self.agent_mask) * (num_plf_pols + num_plf_pols * (num_plf_pols - 1))
+        )
         self.observation_space = combine_observation_space(self.plf_pools, additional_observation_spaces)
 
         # Reset the reward
