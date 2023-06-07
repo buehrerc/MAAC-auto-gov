@@ -147,7 +147,6 @@ def train(
 
         if ep_i % config.save_interval < config.n_rollout_threads & ep_i > 1:
             # Logging of states
-            os.makedirs(run_dir / 'plots', exist_ok=True)
             for name, value in zip(state_mapping,
                                    replay_buffer.get_buffer_data(config.episode_length * config.n_rollout_threads)[
                                    ::config.n_rollout_threads].T):
