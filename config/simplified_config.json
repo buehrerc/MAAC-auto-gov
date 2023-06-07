@@ -3,12 +3,12 @@
     "token": [
       {
         "name": "TKN",
-        "price": 3.0,
+        "price": 1,
         "asset_volatility": 0.2
       },
       {
         "name": "USDC",
-        "price": 0.1,
+        "price": 1,
         "asset_volatility": 0.1
       }
     ]
@@ -19,12 +19,12 @@
       "plf_pool": [
         {
           "token_name": "TKN",
-          "initial_starting_funds": 100000,
+          "initial_starting_funds": 10000,
           "collateral_factor": 0.85
         },
         {
           "token_name": "USDC",
-          "initial_starting_funds": 100000,
+          "initial_starting_funds": 10000,
           "collateral_factor": 0.85
         }
       ]
