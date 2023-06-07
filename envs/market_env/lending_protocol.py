@@ -400,9 +400,9 @@ class LendingProtocol:
         liquidator_amount = loan_plus_penalty / self.plf_pools[pool_collateral].get_token_price()
         remaining_amount = (collateral_value - loan_plus_penalty) / self.plf_pools[pool_collateral].get_token_price()
         assert liquidator_amount > 0, "Liquidated amount has to be positive."
-        assert remaining_amount > 0, "Remaining amount after liquidation has to be positive."
         self.agent_balance[agent_id][collateral_token] += liquidator_amount
-        self.agent_balance[liquidated_agent_id][collateral_token] += remaining_amount
+        if remaining_amount > 0:  # TODO: What exactly happens if the remaining_amount is negative?
+            self.agent_balance[liquidated_agent_id][collateral_token] += remaining_amount
         logging.debug(
             f"Pool {pool_id} was liquidated, liquidator paid {loan_amount} "
             f"and received {liquidator_amount}. The remaining {remaining_amount} "
