@@ -21,7 +21,7 @@ def worker(remote, parent_remote, env_fn_wrapper):
             try:
                 ob, reward, done, info = env.step(data)
             except AssertionError:
-                logging.info(AssertionError)
+                logging.info(str(AssertionError))
                 _ = env.reset()
                 ob, reward, done, info = env.step(data)
             if all(done):
