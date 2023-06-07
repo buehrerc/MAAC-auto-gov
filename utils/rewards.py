@@ -97,8 +97,7 @@ def protocol_revenue(
     lending_protocol = env.get_protocol_of_owner(agent_id)
     assert lending_protocol.owner == agent_id, f"Agent {agent_id} is not owner of the lending protocol"
 
-    return sum([plf_pool.get_revenue() if plf_pool.reserve > 0 else REWARD_ILLEGAL_ACTION
-                for plf_pool in lending_protocol.plf_pools])
+    return sum([plf_pool.get_revenue() for plf_pool in lending_protocol.plf_pools if plf_pool.reserve > 0])
 
 
 def maximum_exposure(
@@ -205,13 +204,19 @@ def opportunity_cost_supply_exposure(
     Function rewards exposure to a specific supply pool of a specific protocol
     provided that the supply interest is lower than the competing supply interest
     """
-    # TODO: current implementation does not correspond to the definition in the report
+    best_interest_rate = max(
+        [lp.plf_pools[plf_pool_id].supply_interest_rate for lp in env.lending_protocol] +
+        [env.lending_protocol[lending_protocol_id].plf_pools[plf_pool_id].token.get_supply_interest_rate()]
+    )
     exposure = 0.0
     lending_protocol = env.lending_protocol[lending_protocol_id]
     for supply_hash, supply_amount in lending_protocol.supply_record.get((agent_id, plf_pool_id), []):
         plf_pool = lending_protocol.plf_pools[plf_pool_id]
-        opportunity_ratio = plf_pool.supply_interest_rate - plf_pool.token.get_supply_interest_rate()
-        exposure += plf_pool.get_supply(supply_hash) * plf_pool.get_token_price() * opportunity_ratio
+        opportunity_diff = plf_pool.supply_interest_rate - best_interest_rate
+        # If the picked lending pool offers the best interest rate -> use borrow exposure instead
+        if opportunity_diff == 0:
+            opportunity_diff = 1
+        exposure += plf_pool.get_supply(supply_hash) * plf_pool.get_token_price() * opportunity_diff
     return exposure
 
 
@@ -245,12 +250,20 @@ def opportunity_cost_borrow_exposure(
     provided that the supply interest is lower than the competing supply interest
     """
     # TODO: current implementation does not correspond to the definition in the report
+    #       => the collateral factor is missing
+    best_interest_rate = max(
+        [lp.plf_pools[plf_pool_id].borrow_interest_rate for lp in env.lending_protocol] +
+        [env.lending_protocol[lending_protocol_id].plf_pools[plf_pool_id].token.get_borrow_interest_rate()]
+    )
     exposure = 0.0
     lending_protocol = env.lending_protocol[lending_protocol_id]
     for borrow_key in list(filter(lambda keys: keys[0] == agent_id and keys[2] == plf_pool_id,
                                   lending_protocol.borrow_record)):
         for borrow_hash, _ in lending_protocol.borrow_record[borrow_key]:
             plf_pool = lending_protocol.plf_pools[plf_pool_id]
-            opportunity_ratio = plf_pool.borrow_interest_rate - plf_pool.token.get_borrow_interest_rate()
-            exposure += plf_pool.get_borrow(borrow_hash) * plf_pool.get_token_price() * opportunity_ratio
+            opportunity_diff = plf_pool.borrow_interest_rate - best_interest_rate
+            # If the picked lending pool offers the best interest rate -> use borrow exposure instead
+            if opportunity_diff == 0:
+                opportunity_diff = 1
+            exposure += plf_pool.get_borrow(borrow_hash) * plf_pool.get_token_price() * opportunity_diff
     return exposure
