@@ -97,7 +97,7 @@ def protocol_revenue(
     lending_protocol = env.get_protocol_of_owner(agent_id)
     assert lending_protocol.owner == agent_id, f"Agent {agent_id} is not owner of the lending protocol"
 
-    return sum([plf_pool.get_revenue() for plf_pool in lending_protocol.plf_pools if plf_pool.reserve > 0])
+    return sum([plf_pool.get_revenue() for plf_pool in lending_protocol.plf_pools])
 
 
 def maximum_exposure(
