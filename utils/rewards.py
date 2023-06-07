@@ -58,11 +58,9 @@ def reward_function_by_type(
         + profit
         + opportunity_cost
 
-    :param agent_id: Id of agent whose reward is computed
+    :param agent_id: id of agent whose reward is computed
     :param reward_type: name of the reward function
     :param env: Environment to compute the reward function on
-    :param illegal_action: True: Agent as performed an illegal action,
-                           False: Agent didn't perform an illegal action
     :return: reward
     """
     if reward_type == REWARD_TYPE_PROTOCOL_REVENUE:
