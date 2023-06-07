@@ -20,8 +20,8 @@ def worker(remote, parent_remote, env_fn_wrapper):
             # If assertions fail within the environment, the environment becomes unusable -> reset the environment
             try:
                 ob, reward, done, info = env.step(data)
-            except AssertionError:
-                logging.info(str(repr(AssertionError)))
+            except AssertionError as ae:
+                logging.error(str(ae))
                 _ = env.reset()
                 ob, reward, done, info = env.step(data)
             if all(done):
