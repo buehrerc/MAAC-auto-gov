@@ -245,6 +245,7 @@ class LendingProtocol:
 
         # 4) Add the funds to the agent's and protocol owner's balance
         fee = (withdraw_amount - initial_amount) * PLF_FEE
+        assert fee >= 0, "Protocol fee has to be positive."
         self.agent_balance[self.owner][pool_token] += fee
         self.agent_balance[agent_id][pool_token] += (withdraw_amount - fee)
 
@@ -268,6 +269,7 @@ class LendingProtocol:
         borrow_price = self.plf_pools[pool_loan].get_token_price()
         l_t = self.plf_pools[pool_loan].get_collateral_factor() - LP_BORROW_SAFETY_MARGIN
         borrow_amount = (deposit_amount * deposit_price * l_t) / borrow_price
+        assert borrow_amount >= 0, "Amount of borrowed tokens has to be positive."
 
         # 2) Deduct the collateral from the agent first
         feedback = self._remove_agent_funds(agent_id, pool_collateral, deposit_amount)
@@ -332,6 +334,7 @@ class LendingProtocol:
         collateral_amount = self.plf_pools[pool_collateral].remove_supply(loan_hash)
 
         fee = (collateral_amount - initial_amount) * PLF_FEE
+        assert fee >= 0, "Protocol fee has to be positive."
         self.agent_balance[self.owner][collateral_token] += fee
         self.agent_balance[agent_id][collateral_token] += (collateral_amount - fee)
 
@@ -396,6 +399,8 @@ class LendingProtocol:
         collateral_token = self.plf_pools[pool_collateral].get_token_name()
         liquidator_amount = loan_plus_penalty / self.plf_pools[pool_collateral].get_token_price()
         remaining_amount = (collateral_value - loan_plus_penalty) / self.plf_pools[pool_collateral].get_token_price()
+        assert liquidator_amount > 0, "Liquidated amount has to be positive."
+        assert remaining_amount > 0, "Remaining amount after liquidation has to be positive."
         self.agent_balance[agent_id][collateral_token] += liquidator_amount
         self.agent_balance[liquidated_agent_id][collateral_token] += remaining_amount
         logging.debug(
