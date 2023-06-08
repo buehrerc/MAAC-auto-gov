@@ -3,12 +3,12 @@
     "token": [
       {
         "name": "TKN",
-        "price": 1,
+        "price": 10000,
         "asset_volatility": 0.2
       },
       {
         "name": "USDC",
-        "price": 1,
+        "price": 10000,
         "asset_volatility": 0.1
       }
     ]

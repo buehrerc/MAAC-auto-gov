@@ -12,6 +12,7 @@ from envs.market_env.constants import (
     PLF_INTEREST_CHANGE_RATE,
     PLF_OPTIMAL_UTILIZATION_RATIO, PLF_STABLE_BORROW_SLOPE_1, PLF_STABLE_BORROW_SLOPE_2,
     PLF_BASE_BORROW_RATE, PLF_VARIABLE_BORROW_SLOPE_1, PLF_VARIABLE_BORROW_SLOPE_2,
+    LP_BORROW_SAFETY_MARGIN,
 )
 
 
@@ -196,8 +197,8 @@ class PLFPool:
         :return: True: illegal_action, False: legal_action
         """
         new_col_fac = self.collateral_factor + direction * self.col_factor_change_rate
-        if not 0 < new_col_fac < 1:
-            # And do not update the collateral_factor
+        if not LP_BORROW_SAFETY_MARGIN < new_col_fac < 1:
+            # Lower limit prevents negative loan amounts
             return True
         self.collateral_factor = new_col_fac
         return False

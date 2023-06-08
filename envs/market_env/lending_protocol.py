@@ -90,6 +90,7 @@ class LendingProtocol:
         # Reset all the records
         self.supply_record = dict()
         self.borrow_record = dict()
+        self.supply_record["Losses", None] = [(None, -1000)]
 
         # Retrieve the state of the lending protocol by updating it
         return self.update()
@@ -269,7 +270,10 @@ class LendingProtocol:
         borrow_price = self.plf_pools[pool_loan].get_token_price()
         l_t = self.plf_pools[pool_loan].get_collateral_factor() - LP_BORROW_SAFETY_MARGIN
         borrow_amount = (deposit_amount * deposit_price * l_t) / borrow_price
-        assert borrow_amount >= 0, "Amount of borrowed tokens has to be positive."
+        if borrow_amount < 0:
+            # The borrow_amount can become lower than zero, if the collateral factor is lower than
+            # the borrow safety margin
+            borrow_amount = 0
 
         # 2) Deduct the collateral from the agent first
         feedback = self._remove_agent_funds(agent_id, pool_collateral, deposit_amount)
@@ -401,8 +405,14 @@ class LendingProtocol:
         remaining_amount = (collateral_value - loan_plus_penalty) / self.plf_pools[pool_collateral].get_token_price()
         assert liquidator_amount > 0, "Liquidated amount has to be positive."
         self.agent_balance[agent_id][collateral_token] += liquidator_amount
-        if remaining_amount > 0:  # TODO: What exactly happens if the remaining_amount is negative?
+        if remaining_amount > 0:
+            # After the deduction of the liquidation penalty, the remaining amount still belongs to initial borrower
             self.agent_balance[liquidated_agent_id][collateral_token] += remaining_amount
+        else:
+            # The protocol has to absorb the losses
+            if self.supply_record.get(("Losses", None)) is None:
+                self.supply_record["Losses", None] = list()
+            self.supply_record["Losses", None].append((None, remaining_amount))
         logging.debug(
             f"Pool {pool_id} was liquidated, liquidator paid {loan_amount} "
             f"and received {liquidator_amount}. The remaining {remaining_amount} "

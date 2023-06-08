@@ -114,9 +114,9 @@ def train(
             # CBUE MODIFICATION: if assertions fail, the environment becomes unusable -> reset the environment
             try:
                 next_obs, rewards, dones, infos = env.step(actions)
-            except AssertionError:
-                logging.info(AssertionError)
-                obs = env.reset()
+            except AssertionError as ae:
+                logging.info(str(ae))
+                _ = env.reset()
                 break
             replay_buffer.push(obs, agent_actions, rewards, next_obs, dones)
             obs = next_obs
