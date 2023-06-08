@@ -35,7 +35,7 @@
       "name": "GovAgent1",
       "protocol": "lending_protocol_1",
       "type": "governance",
-      "reward": [[1, "protocol_revenue"]],
+      "reward": [[1, "profit"]],
       "lr": 0.05,
       "hidden_dim": 128,
       "onehot_dim": 0
