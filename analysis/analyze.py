@@ -15,7 +15,7 @@ from utils.buffer import ReplayBuffer
 from tensorboardX import SummaryWriter
 
 
-NUM_ANALYSIS_RUNS = 10
+NUM_ANALYSIS_RUNS = 6
 
 
 def init(config):
@@ -53,13 +53,14 @@ def main(config):
     model.prep_rollouts(device='cpu')
 
     for run_i in range(NUM_ANALYSIS_RUNS):
+        print(f"Episode {run_i} of {NUM_ANALYSIS_RUNS}")
         for i in range(config.episode_length):
             torch_obs = [Variable(torch.Tensor(np.vstack(obs)),
                                   requires_grad=False)
                          for i in range(model.nagents)]
-            torch_agent_actions = model.step(torch_obs, explore=False)
+            torch_agent_actions = model.step(torch_obs, explore=True)
             agent_actions = [ac.data.numpy() for ac in torch_agent_actions]
-            actions = [[np.where(ac[i] == 1)[0][0] for ac in agent_actions] for i in range(config.n_rollout_threads)]
+            actions = [[np.where(ac[i] == 1)[0][0] for ac in agent_actions] for i in range(1)]
             next_obs, rewards, dones, infos = env.step(actions)
             replay_buffer.push(obs, agent_actions, rewards, next_obs, dones)
             obs = next_obs
