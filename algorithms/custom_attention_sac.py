@@ -31,9 +31,12 @@ class CustomAttentionSAC(AttentionSAC):
         hidden_dim: number of hidden dimensions for networks
         """
         sa_size = list()
+        agent_init_params = list()
         for acsp in env.action_space:
             # We assume that all agents have the same observation_space
             sa_size.append((env.observation_space.shape[0], acsp.n))
+            agent_init_params.append({'num_in_pol': env.observation_space.shape[0],
+                                      'num_out_pol': acsp.n})
 
         super().__init__(agent_init_params=[], sa_size=sa_size,
                          gamma=gamma, tau=tau, pi_lr=pi_lr, q_lr=q_lr,
@@ -47,4 +50,5 @@ class CustomAttentionSAC(AttentionSAC):
                           'reward_scale': reward_scale,
                           'critic_hidden_dim': critic_hidden_dim,
                           'attend_heads': attend_heads,
+                          'agent_init_params': agent_init_params,
                           'sa_size': sa_size}
