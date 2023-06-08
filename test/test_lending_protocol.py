@@ -75,7 +75,7 @@ class TestLendingProtocol(TestCase):
     def test_borrow(self):
         self.assertFalse(self.lending_protocol.borrow(1, 0, 1, 100))
         self.assertEqual(self.lending_protocol.agent_balance[1]['TKN'], 900)
-        self.assertEqual(self.lending_protocol.agent_balance[1]['USDC'], 7100)
+        self.assertEqual(self.lending_protocol.agent_balance[1]['USDC'], 6950)
         self.assertEqual(len(self.lending_protocol.borrow_record[(1, 0, 1)]), 1)
         self.assertEqual(self.lending_protocol.borrow_record[(1, 0, 1)][0][1], 100)
 

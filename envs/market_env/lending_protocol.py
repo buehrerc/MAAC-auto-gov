@@ -90,7 +90,6 @@ class LendingProtocol:
         # Reset all the records
         self.supply_record = dict()
         self.borrow_record = dict()
-        self.supply_record["Losses", None] = [(None, -1000)]
 
         # Retrieve the state of the lending protocol by updating it
         return self.update()
@@ -390,10 +389,19 @@ class LendingProtocol:
                 f"however it didn't have enough funds."
             )
             return True
-        # Add the funds to the pool
+        # Remove the borrow entry from the pool
         self.plf_pools[pool_loan].return_borrow(loan_hash)
 
-        # 4) Distribute the collateral to the liquidator (agent_id) and
+        # 4) Pay fees on the loan_amount
+        loan_token = self.plf_pools[pool_loan].get_token_name()
+        loan_id = list(map(lambda x: x[0], self.borrow_record[borrow_key])).index(loan_hash)
+        loan_hash, initial_loan_amount = self.borrow_record[borrow_key][loan_id]
+        fee = (loan_amount - initial_loan_amount) * PLF_FEE
+        assert fee >= 0, "Protocol fee has to be positive."
+        self.agent_balance[self.owner][loan_token] += fee
+        loan_amount -= fee
+
+        # 5) Distribute the collateral to the liquidator (agent_id) and
         #    the remaining value to the liquidated agent (liquidated_agent_id)
         loan_plus_penalty = loan_amount * self.plf_pools[pool_loan].get_token_price() * (1 + LP_LIQUIDATION_PENALTY)
         collateral_amount = self.plf_pools[pool_collateral].remove_supply(loan_hash)
@@ -419,8 +427,8 @@ class LendingProtocol:
             f"were transfered to Agent {liquidated_agent_id}"
          )
 
-        # 5) Remove the loan from the borrow_record
-        self.borrow_record[borrow_key].pop(list(map(lambda x: x[0], self.borrow_record[borrow_key])).index(loan_hash))
+        # 6) Remove the loan from the borrow_record
+        self.borrow_record[borrow_key].pop(loan_id)
 
         return False
 

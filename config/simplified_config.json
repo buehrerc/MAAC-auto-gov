@@ -66,7 +66,7 @@
     }
   ],
   "parameter": {
-    "n_rollout_threads": 12,
+    "n_rollout_threads": 1,
     "buffer_length": 10000,
     "n_episodes": 20020,
     "episode_length": 64,
