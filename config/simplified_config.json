@@ -68,12 +68,12 @@
   "parameter": {
     "n_rollout_threads": 12,
     "buffer_length": 10000,
-    "n_episodes": 20020,
-    "episode_length": 64,
+    "n_episodes": 5050,
+    "episode_length": 48,
     "batch_size": 512,
     "save_interval": 2000,
     "attend_heads": 4,
-    "reward_scale": 1e-5,
+    "reward_scale": 1e-4,
     "seed": 30
   }
 }
