@@ -193,7 +193,7 @@ def supply_exposure(
     Function rewards exposure to a specific supply pool of a specific protocol
     """
     assert len(agent_action) == 4, "Agent type is incorrect!"
-    agent_id, idx_lp, idx_from, idx_to = agent_action
+    _, idx_lp, idx_from, idx_to = agent_action
 
     # Reward is positive, if the agent deposits funds into correct pool
     if lending_protocol_id == idx_lp and plf_pool_id == idx_to:
@@ -239,7 +239,7 @@ def borrow_exposure(
     Function rewards exposure to a specific borrow pool of a specific protocol
     """
     assert len(agent_action) == 4, "Agent type is incorrect!"
-    agent_id, idx_lp, idx_from, idx_to = agent_action
+    _, idx_lp, idx_from, idx_to = agent_action
 
     # Reward is positive, if the agent deposits funds into correct pool
     if lending_protocol_id == idx_lp and plf_pool_id == idx_from:
