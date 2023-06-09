@@ -190,15 +190,41 @@ def supply_exposure(
     plf_pool_id: int = REWARD_CONSTANT_SUPPLY_PLF_ID,
 ) -> float:
     """
-    Function rewards exposure to a specific supply pool of a specific protocol
+    The function rewards the immediate action of the agent by
+    rewarding exposure to a specific supply pool of a specific protocol
     """
     assert len(agent_action) == 4, "Agent type is incorrect!"
     _, idx_lp, idx_from, idx_to = agent_action
 
     # Reward is positive, if the agent deposits funds into correct pool
     if lending_protocol_id == idx_lp and plf_pool_id == idx_to:
+        lending_protocol = env.lending_protocol[lending_protocol_id]
+        supply_hash, _ = lending_protocol.supply_record[agent_id, idx_to][-1]
         plf_pool = env.lending_protocol[lending_protocol_id].plf_pools[plf_pool_id]
-        return PLF_STEP_SIZE * plf_pool.get_token_price()
+        return plf_pool.get_supply(supply_hash) * plf_pool.get_token_price()
+    return REWARD_ILLEGAL_ACTION / 10
+
+
+def borrow_exposure(
+    env,
+    agent_id: int,
+    agent_action: Tuple,
+    lending_protocol_id: int = REWARD_CONSTANT_SUPPLY_LP_ID,
+    plf_pool_id: int = REWARD_CONSTANT_SUPPLY_PLF_ID,
+) -> float:
+    """
+    The function rewards the immediate action of the agent by
+    rewarding exposure to a specific borrow pool of a specific protocol
+    """
+    assert len(agent_action) == 4, "Agent type is incorrect!"
+    _, idx_lp, idx_from, idx_to = agent_action
+
+    # Reward is positive, if the agent deposits funds into correct pool
+    if lending_protocol_id == idx_lp and plf_pool_id == idx_from:
+        lending_protocol = env.lending_protocol[lending_protocol_id]
+        borrow_hash, _ = lending_protocol.borrow_record[agent_id, idx_to, idx_from][-1]
+        plf_pool = lending_protocol.plf_pools[plf_pool_id]
+        return plf_pool.get_borrow(borrow_hash) * plf_pool.get_token_price()
     return REWARD_ILLEGAL_ACTION / 10
 
 
@@ -226,28 +252,6 @@ def opportunity_cost_supply_exposure(
             opportunity_diff = 1
         exposure += plf_pool.get_supply(supply_hash) * plf_pool.get_token_price() * opportunity_diff
     return exposure
-
-
-def borrow_exposure(
-    env,
-    agent_id: int,
-    agent_action: Tuple,
-    lending_protocol_id: int = REWARD_CONSTANT_SUPPLY_LP_ID,
-    plf_pool_id: int = REWARD_CONSTANT_SUPPLY_PLF_ID,
-) -> float:
-    """
-    Function rewards exposure to a specific borrow pool of a specific protocol
-    """
-    assert len(agent_action) == 4, "Agent type is incorrect!"
-    _, idx_lp, idx_from, idx_to = agent_action
-
-    # Reward is positive, if the agent deposits funds into correct pool
-    if lending_protocol_id == idx_lp and plf_pool_id == idx_from:
-        lending_protocol = env.lending_protocol[lending_protocol_id]
-        borrow_hash, _ = lending_protocol.borrow_record[agent_id, idx_to, idx_from][-1]
-        plf_pool = lending_protocol.plf_pools[plf_pool_id]
-        return plf_pool.get_borrow(borrow_hash) * plf_pool.get_token_price()
-    return REWARD_ILLEGAL_ACTION / 10
 
 
 def opportunity_cost_borrow_exposure(
