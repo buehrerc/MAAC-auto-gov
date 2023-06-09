@@ -355,12 +355,7 @@ class LendingProtocol:
 
         :return: True: illegal_action, False: legal_action
         """
-        # 1) Check whether there are any loans, which could be liquidated
-        pool_loans_keys = list(filter(lambda x: x[2] == pool_id, self.borrow_record.keys()))
-        if len(pool_loans_keys) == 0:
-            logging.debug(f"Agent {agent_id} tried to liquidate pool {pool_id}, but there is no loan in this pool.")
-
-        # 2) Check whether the loans have unhealthy loans
+        # 1) Check whether the pool has an unhealthy loan
         if self.worst_loans.get(pool_id) is None:
             return True
 
@@ -371,7 +366,8 @@ class LendingProtocol:
                 f" however the loan has a good health factor: {health_factor}"
             )
             return True
-        # 3) Repay the loan funds
+
+        # 2) Repay the loan funds
         liquidated_agent_id, pool_collateral, pool_loan = borrow_key
         loan_amount = self.plf_pools[pool_loan].get_borrow(loan_hash)
         if loan_amount is None:
@@ -381,7 +377,8 @@ class LendingProtocol:
             )
             # Since this is per se not an illegal action -> we leave it as a valid action without an effect
             return False
-        # Remove funds from the agent
+
+        # 3) Remove funds from the agent
         feedback = self._remove_agent_funds(agent_id, pool_loan, loan_amount)
         if feedback:
             logging.debug(
@@ -392,23 +389,22 @@ class LendingProtocol:
         # Remove the borrow entry from the pool
         self.plf_pools[pool_loan].return_borrow(loan_hash)
 
-        # 4) Pay fees on the loan_amount
-        loan_token = self.plf_pools[pool_loan].get_token_name()
+        # 4) Pay fees on the collateral_amount
+        collateral_token = self.plf_pools[pool_collateral].get_token_name()
         loan_id = list(map(lambda x: x[0], self.borrow_record[borrow_key])).index(loan_hash)
-        loan_hash, initial_loan_amount = self.borrow_record[borrow_key][loan_id]
-        fee = (loan_amount - initial_loan_amount) * PLF_FEE
+        collateral_amount = self.plf_pools[pool_collateral].remove_supply(loan_hash)
+        loan_hash, initial_collateral_amount = self.borrow_record[borrow_key][loan_id]
+        fee = (collateral_amount - initial_collateral_amount) * PLF_FEE
         assert fee >= 0, "Protocol fee has to be positive."
-        self.agent_balance[self.owner][loan_token] += fee
-        loan_amount -= fee
+        self.agent_balance[self.owner][collateral_token] += fee
+        collateral_amount -= fee
 
         # 5) Distribute the collateral to the liquidator (agent_id) and
         #    the remaining value to the liquidated agent (liquidated_agent_id)
         loan_plus_penalty = loan_amount * self.plf_pools[pool_loan].get_token_price() * (1 + LP_LIQUIDATION_PENALTY)
-        collateral_amount = self.plf_pools[pool_collateral].remove_supply(loan_hash)
         collateral_value = collateral_amount * self.plf_pools[pool_collateral].get_token_price()
 
         # Liquidator receives loan_plus_penalty -> loan_amount
-        collateral_token = self.plf_pools[pool_collateral].get_token_name()
         liquidator_amount = loan_plus_penalty / self.plf_pools[pool_collateral].get_token_price()
         remaining_amount = (collateral_value - loan_plus_penalty) / self.plf_pools[pool_collateral].get_token_price()
         assert liquidator_amount > 0, "Liquidated amount has to be positive."
