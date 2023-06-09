@@ -3,12 +3,12 @@
     "token": [
       {
         "name": "TKN",
-        "price": 10000,
+        "price": 100,
         "asset_volatility": 0.2
       },
       {
         "name": "USDC",
-        "price": 10000,
+        "price": 100,
         "asset_volatility": 0.1
       }
     ]
@@ -43,7 +43,7 @@
     {
       "name": "UserAgent1",
       "type": "user",
-      "reward": [[1, "supply_exposure"]],
+      "reward": [[1, "opportunity_cost_supply_exposure"]],
       "lr": 0.05,
       "hidden_dim": 128,
       "onehot_dim": 0,
@@ -55,7 +55,7 @@
     {
       "name": "UserAgent2",
       "type": "user",
-      "reward": [[1, "borrow_exposure"]],
+      "reward": [[1, "opportunity_cost_borrow_exposure"]],
       "lr": 0.05,
       "hidden_dim": 128,
       "onehot_dim": 0,
