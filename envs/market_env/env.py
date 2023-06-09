@@ -131,8 +131,12 @@ class MultiAgentEnv(gym.Env):
 
         # 3) Collect the rewards for all
         reward = torch.Tensor([
-            reward_function(i, args[0], self, args[1])
-            for i, args in enumerate(zip(self.agent_reward, action_feedback))
+            reward_function(agent_id=agent_id,
+                            agent_action=self.action_mapping[agent_id][action[agent_id]],
+                            env=self,
+                            reward_type=args[0],
+                            illegal_action=args[1])
+            for agent_id, args in enumerate(zip(self.agent_reward, action_feedback))
         ])
 
         # 4) Store the state of the environment

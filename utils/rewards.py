@@ -14,11 +14,13 @@ from envs.market_env.constants import (
     REWARD_CONSTANT_OPPORTUNITY_BETA,
     REWARD_CONSTANT_SUPPLY_LP_ID,
     REWARD_CONSTANT_SUPPLY_PLF_ID,
+    PLF_STEP_SIZE
 )
 
 
 def reward_function(
     agent_id: int,
+    agent_action: Tuple,
     reward_type: List[Tuple],
     env,
     illegal_action: bool,
@@ -31,6 +33,7 @@ def reward_function(
         + profit
 
     :param agent_id: Id of agent whose reward is computed
+    :param agent_action: Action of the agent
     :param reward_type: List of reward functions: [[weight, reward_type]+]
     :param env: Environment to compute the reward function on
     :param illegal_action: True: Agent as performed an illegal action,
@@ -42,12 +45,13 @@ def reward_function(
         return REWARD_ILLEGAL_ACTION
 
     return sum([
-        weight * reward_function_by_type(agent_id, rt, env) for weight, rt in reward_type
+        weight * reward_function_by_type(agent_id, agent_action, rt, env) for weight, rt in reward_type
     ])
 
 
 def reward_function_by_type(
     agent_id: int,
+    agent_action: Tuple,
     reward_type: str,
     env,
 ) -> float:
@@ -59,6 +63,7 @@ def reward_function_by_type(
         + opportunity_cost
 
     :param agent_id: id of agent whose reward is computed
+    :param agent_action: Action of the agent
     :param reward_type: name of the reward function
     :param env: Environment to compute the reward function on
     :return: reward
@@ -72,11 +77,11 @@ def reward_function_by_type(
     elif reward_type == REWARD_TYPE_OPPORTUNITY_COST:
         return opportunity_cost(env, agent_id)
     elif reward_type == REWARD_TYPE_SUPPLY_EXPOSURE:
-        return supply_exposure(env, agent_id)
+        return supply_exposure(env, agent_id, agent_action)
     elif reward_type == REWARD_TYPE_OPPORTUNITY_SUPPLY_EXPOSURE:
         return opportunity_cost_supply_exposure(env, agent_id)
     elif reward_type == REWARD_TYPE_BORROW_EXPOSURE:
-        return borrow_exposure(env, agent_id)
+        return borrow_exposure(env, agent_id, agent_action)
     elif reward_type == REWARD_TYPE_OPPORTUNITY_BORROW_EXPOSURE:
         return opportunity_cost_borrow_exposure(env, agent_id)
     else:
@@ -180,18 +185,21 @@ def opportunity_cost(
 def supply_exposure(
     env,
     agent_id: int,
+    agent_action: Tuple,
     lending_protocol_id: int = REWARD_CONSTANT_SUPPLY_LP_ID,
     plf_pool_id: int = REWARD_CONSTANT_SUPPLY_PLF_ID,
 ) -> float:
     """
     Function rewards exposure to a specific supply pool of a specific protocol
     """
-    exposure = 0.0
-    lending_protocol = env.lending_protocol[lending_protocol_id]
-    for supply_hash, supply_amount in lending_protocol.supply_record.get((agent_id, plf_pool_id), []):
-        plf_pool = lending_protocol.plf_pools[plf_pool_id]
-        exposure += plf_pool.get_supply(supply_hash) * plf_pool.get_token_price()
-    return exposure
+    assert len(agent_action) == 4, "Agent type is incorrect!"
+    agent_id, idx_lp, idx_from, idx_to = agent_action
+
+    # Reward is positive, if the agent deposits funds into correct pool
+    if lending_protocol_id == idx_lp and plf_pool_id == idx_to:
+        plf_pool = env.lending_protocol[lending_protocol_id].plf_pools[plf_pool_id]
+        return PLF_STEP_SIZE * plf_pool.get_token_price()
+    return REWARD_ILLEGAL_ACTION / 10
 
 
 def opportunity_cost_supply_exposure(
@@ -223,20 +231,21 @@ def opportunity_cost_supply_exposure(
 def borrow_exposure(
     env,
     agent_id: int,
+    agent_action: Tuple,
     lending_protocol_id: int = REWARD_CONSTANT_SUPPLY_LP_ID,
     plf_pool_id: int = REWARD_CONSTANT_SUPPLY_PLF_ID,
 ) -> float:
     """
     Function rewards exposure to a specific borrow pool of a specific protocol
     """
-    exposure = 0.0
-    lending_protocol = env.lending_protocol[lending_protocol_id]
-    for borrow_key in list(filter(lambda keys: keys[0] == agent_id and keys[2] == plf_pool_id,
-                                                  lending_protocol.borrow_record)):
-        for borrow_hash, _ in lending_protocol.borrow_record[borrow_key]:
-            plf_pool = lending_protocol.plf_pools[plf_pool_id]
-            exposure += plf_pool.get_borrow(borrow_hash) * plf_pool.get_token_price()
-    return exposure
+    assert len(agent_action) == 4, "Agent type is incorrect!"
+    agent_id, idx_lp, idx_from, idx_to = agent_action
+
+    # Reward is positive, if the agent deposits funds into correct pool
+    if lending_protocol_id == idx_lp and plf_pool_id == idx_from:
+        plf_pool = env.lending_protocol[lending_protocol_id].plf_pools[plf_pool_id]
+        return PLF_STEP_SIZE * plf_pool.get_token_price()
+    return REWARD_ILLEGAL_ACTION / 10
 
 
 def opportunity_cost_borrow_exposure(
