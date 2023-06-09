@@ -71,7 +71,7 @@
     "n_episodes": 10050,
     "episode_length": 32,
     "batch_size": 1024,
-    "num_updates": 12,
+    "num_updates": 8,
     "save_interval": 2000,
     "attend_heads": 4,
     "reward_scale": 1e-4,
