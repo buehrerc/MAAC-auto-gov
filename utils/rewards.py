@@ -243,8 +243,10 @@ def borrow_exposure(
 
     # Reward is positive, if the agent deposits funds into correct pool
     if lending_protocol_id == idx_lp and plf_pool_id == idx_from:
-        plf_pool = env.lending_protocol[lending_protocol_id].plf_pools[plf_pool_id]
-        return PLF_STEP_SIZE * plf_pool.get_token_price()
+        lending_protocol = env.lending_protocol[lending_protocol_id]
+        borrow_hash, _ = lending_protocol.borrow_record[agent_id, idx_to, idx_from]
+        plf_pool = lending_protocol.plf_pools[plf_pool_id]
+        return plf_pool.get_borrow(borrow_hash) * plf_pool.get_token_price()
     return REWARD_ILLEGAL_ACTION / 10
 
 
