@@ -32,7 +32,7 @@ def init(config):
         setattr(config, key, value)
 
     env = make_parallel_env(env_config, n_rollout_threads=1, seed=0)
-    model = AttentionSAC.init_from_save(model_path, load_critic=True)
+    model = AttentionSAC.init_from_save(model_path, load_critic=False)
     replay_buffer = ReplayBuffer(
         max_steps=config.episode_length * NUM_ANALYSIS_RUNS,
         num_agents=model.nagents,
@@ -65,18 +65,20 @@ def main(config):
             replay_buffer.push(obs, agent_actions, rewards, next_obs, dones)
             obs = next_obs
 
-        # for name, value in zip(state_mapping,
-        #                        replay_buffer.get_buffer_data(config.episode_length).T):
-        #     fig, ax = plt.subplots(nrows=1, ncols=1)  # create figure & 1 axis
-        #     ax.plot(np.arange(len(value)), value)
-        #     ax.set_title(name.replace("/", "_"))
-        #     logger.add_figure('matplotlib/' + name, fig, run_i)
+        if config.store_image:
+            for name, value in zip(state_mapping,
+                                   replay_buffer.get_buffer_data(config.episode_length).T):
+                fig, ax = plt.subplots(nrows=1, ncols=1)  # create figure & 1 axis
+                ax.plot(np.arange(len(value)), value)
+                ax.set_title(name.replace("/", "_"))
+                logger.add_figure('matplotlib/' + name, fig, run_i)
     logger.close()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("model", help="Name of directory with checkpoint files")
+    parser.add_argument("--store_image", action="store_true")
     config_ = parser.parse_args()
 
     main(config_)
