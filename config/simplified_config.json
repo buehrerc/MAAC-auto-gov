@@ -43,7 +43,12 @@
     {
       "name": "UserAgent1",
       "type": "user",
-      "reward": [[1, "supply_exposure"]],
+      "reward": [
+        [
+          1,
+          "supply_exposure"
+        ]
+      ],
       "lr": 0.01,
       "hidden_dim": 128,
       "onehot_dim": 0,
@@ -51,27 +56,15 @@
         "TKN": 0,
         "USDC": 10000
       }
-    },
-    {
-      "name": "UserAgent2",
-      "type": "user",
-      "reward": [[1, "borrow_exposure"]],
-      "lr": 0.01,
-      "hidden_dim": 128,
-      "onehot_dim": 0,
-      "balance": {
-        "TKN": 1e10,
-        "USDC": 0
-      }
     }
   ],
   "parameter": {
     "n_rollout_threads": 12,
     "buffer_length": 10000,
-    "n_episodes": 25050,
+    "n_episodes": 10050,
     "episode_length": 32,
     "batch_size": 1024,
-    "num_updates": 8,
+    "num_updates": 4,
     "save_interval": 2000,
     "attend_heads": 4,
     "gamma": 0.1,
