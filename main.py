@@ -145,7 +145,7 @@ def train(
             logger.add_scalar('agent%i/mean_episode_rewards' % a_i,
                               a_ep_rew * config.episode_length, ep_i)
 
-        if ep_i % config.save_interval < config.n_rollout_threads & ep_i > 1:
+        if ep_i % config.save_interval < config.n_rollout_threads and ep_i > 1:
             # Logging of states
             os.makedirs(run_dir / 'plots', exist_ok=True)
             for name, value in zip(state_mapping,
