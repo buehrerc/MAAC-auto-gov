@@ -197,13 +197,17 @@ def supply_exposure(
     action_id, idx_lp, idx_from, idx_to = agent_action
 
     # Reward is positive, if the agent deposits funds into correct pool
-    if lending_protocol_id != idx_lp or plf_pool_id != idx_to or action_id != 1:
+    if not (action_id == 1 and
+            idx_lp == lending_protocol_id and
+            idx_from is None and
+            idx_to == plf_pool_id):
         return REWARD_ILLEGAL_ACTION
 
     lending_protocol = env.lending_protocol[lending_protocol_id]
     supply_hash, _ = lending_protocol.supply_record[agent_id, idx_to][-1]
     plf_pool = env.lending_protocol[lending_protocol_id].plf_pools[plf_pool_id]
-    return plf_pool.get_supply(supply_hash) * plf_pool.get_token_price()
+    # return plf_pool.get_supply(supply_hash) * plf_pool.get_token_price()
+    return plf_pool.get_supply(supply_hash)
 
 
 def borrow_exposure(
