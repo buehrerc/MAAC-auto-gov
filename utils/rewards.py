@@ -198,7 +198,7 @@ def supply_exposure(
 
     # Reward is positive, if the agent deposits funds into correct pool
     if lending_protocol_id != idx_lp or plf_pool_id != idx_to or action_id != 1:
-        return REWARD_ILLEGAL_ACTION / 10
+        return REWARD_ILLEGAL_ACTION
 
     lending_protocol = env.lending_protocol[lending_protocol_id]
     supply_hash, _ = lending_protocol.supply_record[agent_id, idx_to][-1]
