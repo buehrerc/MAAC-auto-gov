@@ -125,6 +125,7 @@ TOKEN_STATES = lambda token_number: [
     f"token_{token_number}/price",
     f"token_{token_number}/borrow_interest_rate",
     f"token_{token_number}/supply_interest_rate",
+    f"token_{token_number}/collateral_factor",
     f"token_{token_number}/asset_volatility",
 ]
 

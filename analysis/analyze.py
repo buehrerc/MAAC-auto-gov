@@ -49,11 +49,11 @@ def init(config):
 def main(config):
     env, model, replay_buffer, logger, state_mapping = init(config)
 
-    obs = env.reset()
     model.prep_rollouts(device='cpu')
 
     for run_i in range(NUM_ANALYSIS_RUNS):
         print(f"Episode {run_i+1} of {NUM_ANALYSIS_RUNS}")
+        obs = env.reset()
         for i in range(config.episode_length):
             torch_obs = [Variable(torch.Tensor(np.vstack(obs)),
                                   requires_grad=False)

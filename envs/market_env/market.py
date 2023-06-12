@@ -126,7 +126,8 @@ class Token:
             self.price,
             self.borrow_interest_rate,
             self.supply_interest_rate,
-            self.asset_volatility
+            self.collateral_factor,
+            self.asset_volatility,
         ])
 
     def get_borrow_interest_rate(self):
