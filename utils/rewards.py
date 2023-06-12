@@ -206,8 +206,8 @@ def supply_exposure(
     lending_protocol = env.lending_protocol[lending_protocol_id]
     supply_hash, _ = lending_protocol.supply_record[agent_id, idx_to][-1]
     plf_pool = env.lending_protocol[lending_protocol_id].plf_pools[plf_pool_id]
-    # return plf_pool.get_supply(supply_hash) * plf_pool.get_token_price()
-    return plf_pool.get_supply(supply_hash)
+    return plf_pool.get_supply(supply_hash) * plf_pool.get_token_price()
+    # return plf_pool.get_supply(supply_hash)
 
 
 def borrow_exposure(
