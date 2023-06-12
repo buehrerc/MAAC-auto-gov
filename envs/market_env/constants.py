@@ -117,8 +117,8 @@ LP_STATES = lambda num_plf_pools, num_agent: sum([
 
 # 4.3) Token
 TOKEN_OBSERVATION_SPACE = spaces.Box(
-    low=np.array([0, 0, 0, 0]),
-    high=np.array([np.inf, np.inf, np.inf, np.inf]),
+    low=np.array([0, 0, 0, 0, 0]),
+    high=np.array([np.inf, np.inf, np.inf, np.inf, np.inf]),
     dtype=np.float32
 )
 TOKEN_STATES = lambda token_number: [
