@@ -224,8 +224,11 @@ def borrow_exposure(
     action_id, idx_lp, idx_from, idx_to = agent_action
 
     # Reward is positive, if the agent deposits funds into correct pool
-    if lending_protocol_id != idx_lp or plf_pool_id != idx_from or action_id != 3:
-        return REWARD_ILLEGAL_ACTION / 10
+    if not (action_id == 1 and
+            idx_lp == lending_protocol_id and
+            idx_from is None and
+            idx_to == plf_pool_id):
+        return REWARD_ILLEGAL_ACTION
 
     lending_protocol = env.lending_protocol[lending_protocol_id]
     borrow_hash, _ = lending_protocol.borrow_record[agent_id, idx_to, idx_from][-1]
@@ -248,8 +251,12 @@ def opportunity_cost_supply_exposure(
     action_id, idx_lp, idx_from, idx_to = agent_action
 
     # Reward is positive, if the agent deposits funds into correct pool
-    if lending_protocol_id != idx_lp or plf_pool_id != idx_to or action_id != 1:
-        return REWARD_ILLEGAL_ACTION / 10
+    if not (action_id == 1 and
+            idx_lp == lending_protocol_id and
+            idx_from is None and
+            idx_to == plf_pool_id):
+        return REWARD_ILLEGAL_ACTION
+
     best_interest_rate = max(
         [lp.plf_pools[plf_pool_id].supply_interest_rate for lp in env.lending_protocol] +
         [env.lending_protocol[lending_protocol_id].plf_pools[plf_pool_id].token.get_supply_interest_rate()]
@@ -281,10 +288,12 @@ def opportunity_cost_borrow_exposure(
     assert len(agent_action) == 4, "Agent type is incorrect!"
     action_id, idx_lp, idx_from, idx_to = agent_action
 
-    # Reward is positive, if the agent deposits funds into correct pool
-    if lending_protocol_id != idx_lp or plf_pool_id != idx_from or action_id != 3:
-        return REWARD_ILLEGAL_ACTION / 10
-    # TODO: borrow is not worth it, when the interest rate is not the best -> respect that
+    ## Reward is positive, if the agent deposits funds into correct pool
+    if not (action_id == 1 and
+            idx_lp == lending_protocol_id and
+            idx_from is None and
+            idx_to == plf_pool_id):
+        return REWARD_ILLEGAL_ACTION
 
     best_interest_rate = max(
         [lp.plf_pools[plf_pool_id].borrow_interest_rate for lp in env.lending_protocol] +
