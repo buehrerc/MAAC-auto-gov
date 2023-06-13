@@ -56,7 +56,7 @@
   "parameter": {
     "n_rollout_threads": 12,
     "buffer_length": 10000,
-    "n_episodes": 10050,
+    "n_episodes": 1050,
     "episode_length": 25,
     "batch_size": 1024,
     "num_updates": 4,
