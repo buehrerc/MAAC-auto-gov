@@ -250,7 +250,6 @@ def opportunity_cost_supply_exposure(
     # Reward is positive, if the agent deposits funds into correct pool
     if lending_protocol_id != idx_lp or plf_pool_id != idx_to or action_id != 1:
         return REWARD_ILLEGAL_ACTION / 10
-    # TODO: supply is not worth it, when the interest rate is not the best -> respect that
     best_interest_rate = max(
         [lp.plf_pools[plf_pool_id].supply_interest_rate for lp in env.lending_protocol] +
         [env.lending_protocol[lending_protocol_id].plf_pools[plf_pool_id].token.get_supply_interest_rate()]
