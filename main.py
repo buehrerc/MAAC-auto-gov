@@ -142,8 +142,7 @@ def train(
             logger.add_scalar(name, value, ep_i)
 
         for a_i, a_ep_rew in enumerate(ep_rews):
-            logger.add_scalar('agent%i/mean_episode_rewards' % a_i,
-                              a_ep_rew * config.episode_length, ep_i)
+            logger.add_scalar('agent%i/mean_episode_rewards' % a_i, a_ep_rew, ep_i)
 
         if ep_i % config.save_interval < config.n_rollout_threads and ep_i > 1:
             # Logging of states

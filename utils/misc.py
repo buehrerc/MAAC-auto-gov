@@ -97,7 +97,8 @@ def firmmax_sample(logits, temperature, dim=1):
     y = logits + sample_gumbel(logits.shape, tens_type=type(logits.data)) / temperature
     return F.softmax(y, dim=dim)
 
-def categorical_sample(probs, use_cuda=False):
+def categorical_sample(probs, std_dev=0.05, use_cuda=False):
+    probs += np.random.normal(size=probs.shape, scale=std_dev)
     int_acs = torch.multinomial(probs, 1)
     if use_cuda:
         tensor_type = torch.cuda.FloatTensor
