@@ -64,7 +64,7 @@
     "attend_heads": 4,
     "gamma": 0.2,
     "reward_scale": 1e-4,
-    "seed": 50,
+    "seed": 69,
     "pi_lr": 1e-4,
     "q_lr": 1e-4,
     "tau": 0.001
