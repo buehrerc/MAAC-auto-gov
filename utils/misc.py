@@ -97,7 +97,7 @@ def firmmax_sample(logits, temperature, dim=1):
     y = logits + sample_gumbel(logits.shape, tens_type=type(logits.data)) / temperature
     return F.softmax(y, dim=dim)
 
-def categorical_sample(probs, std_dev=0.05, use_cuda=False):
+def categorical_sample(probs, std_dev=0.01, use_cuda=False):
     probs += torch.normal(torch.zeros(probs.shape), std_dev)
     probs[probs < 0] = 0
     int_acs = torch.multinomial(probs, 1)

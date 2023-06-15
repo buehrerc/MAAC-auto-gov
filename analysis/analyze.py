@@ -58,7 +58,7 @@ def main(config):
             torch_obs = [Variable(torch.Tensor(np.vstack(obs)),
                                   requires_grad=False)
                          for i in range(model.nagents)]
-            torch_agent_actions = model.step(torch_obs, explore=True)
+            torch_agent_actions = model.step(torch_obs, explore=False)
             agent_actions = [ac.data.numpy() for ac in torch_agent_actions]
             actions = [[np.where(ac[i] == 1)[0][0] for ac in agent_actions] for i in range(1)]
             next_obs, rewards, dones, infos = env.step(actions)
