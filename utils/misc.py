@@ -106,7 +106,7 @@ def categorical_sample(probs, use_cuda=False):
     acs = Variable(tensor_type(*probs.shape).fill_(0)).scatter_(1, int_acs, 1)
     return int_acs, acs
 
-def epsilon_greedy(probs, epsilon=0.05, use_cuda=False):
+def epsilon_greedy(probs, epsilon=0.2, use_cuda=False):
     if np.random.uniform(0, 1) < epsilon:
         int_acs = torch.tensor(np.floor(np.random.uniform(low=0, high=probs.shape[1], size=(probs.shape[0], 1))), dtype=torch.int64)
 
