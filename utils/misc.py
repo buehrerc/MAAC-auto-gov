@@ -116,8 +116,7 @@ def epsilon_greedy(probs, epsilon=0.05, use_cuda=False):
             tensor_type = torch.FloatTensor
         acs = Variable(tensor_type(*probs.shape).fill_(0)).scatter_(1, int_acs, 1)
     else:
-        acs = onehot_from_logits(probs)
-        int_acs = torch.argmax(acs, dim=1, keepdim=True)
+        int_acs, acs = categorical_sample(probs, use_cuda)
     return int_acs, acs
 
 def disable_gradients(module):

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from utils.misc import onehot_from_logits, categorical_sample, epsilon_greedy
+from utils.misc import onehot_from_logits, categorical_sample
 
 class BasePolicy(nn.Module):
     """
@@ -61,9 +61,7 @@ class DiscretePolicy(BasePolicy):
         probs = F.softmax(out, dim=1)
         on_gpu = next(self.parameters()).is_cuda
         if sample:
-            # CBUE MODIFICATION: Different exploration algorithm
-            # int_act, act = categorical_sample(probs, use_cuda=on_gpu)
-            int_act, act = epsilon_greedy(probs, epsilon=0.1)
+            int_act, act = categorical_sample(probs, use_cuda=on_gpu)
         else:
             act = onehot_from_logits(probs)
         rets = [act]

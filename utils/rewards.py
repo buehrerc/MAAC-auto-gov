@@ -224,10 +224,9 @@ def borrow_exposure(
     action_id, idx_lp, idx_from, idx_to = agent_action
 
     # Reward is positive, if the agent deposits funds into correct pool
-    if not (action_id == 1 and
+    if not (action_id == 3 and
             idx_lp == lending_protocol_id and
-            idx_from is None and
-            idx_to == plf_pool_id):
+            idx_from == plf_pool_id):
         return REWARD_ILLEGAL_ACTION
 
     lending_protocol = env.lending_protocol[lending_protocol_id]

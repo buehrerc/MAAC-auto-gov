@@ -56,7 +56,10 @@ def init_params(config, env_config):
     random.seed(config.seed)
     np.random.seed(config.seed)
 
-    return logger, run_num, run_dir, log_dir, state_mapping
+    # Fix Exploration Limit based on configs
+    exploration_limit = config.buffer_length // (config.n_rollout_threads * config.episode_length)
+
+    return logger, run_num, run_dir, log_dir, state_mapping, exploration_limit
 
 
 def init_env(env_config, seed):
@@ -163,12 +166,12 @@ def train(
 
 
 def run(config, env_config):
-    logger, run_num, run_dir, log_dir, state_mapping = init_params(config, env_config)
+    logger, run_num, run_dir, log_dir, state_mapping, exploration_limit = init_params(config, env_config)
     init_logger(log_dir)
 
     env = make_parallel_env(env_config, config.n_rollout_threads, config.seed)
     obsp, acsp = env.get_spaces()
-    agents = make_agent(env_config, obsp, acsp)
+    agents = make_agent(env_config, obsp, acsp, exploration_limit)
 
     model = CustomAttentionSAC(
         env=env,

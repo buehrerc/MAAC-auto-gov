@@ -13,7 +13,8 @@ from utils.agents import AttentionAgent
 def make_agent(
     config: Dict,
     observation_space: spaces.Space,
-    action_space: spaces.Space
+    action_space: spaces.Space,
+    exploration_limit: int,
 ) -> List[AttentionAgent]:
     from utils.custom_agents import CustomAgent
 
@@ -34,6 +35,7 @@ def make_agent(
 
         new_agent = CustomAgent(action_space=agent_action_space.n,
                                 observation_space=observation_space,
+                                exploration_limit=exploration_limit,
                                 **agent_config)
         logging.info("Initialization:: " + str(new_agent))
         agent_list.append(new_agent)
