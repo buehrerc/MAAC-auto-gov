@@ -60,7 +60,7 @@
     "episode_length": 25,
     "batch_size": 256,
     "num_updates": 4,
-    "save_interval": 5000,
+    "save_interval":500,
     "attend_heads": 4,
     "gamma": 0.9,
     "reward_scale": 1e+4,
