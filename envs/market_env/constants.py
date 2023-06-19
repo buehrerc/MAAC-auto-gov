@@ -151,7 +151,7 @@ ENVIRONMENT_STATES = lambda agent_num, token_num, plf_in_lp_num: sum([
 ], [])
 
 # 5) Reward Function Constants
-REWARD_ILLEGAL_ACTION = -10
+REWARD_ILLEGAL_ACTION = -10000
 REWARD_TYPE_PROTOCOL_REVENUE = "protocol_revenue"
 REWARD_TYPE_MAXIMUM_EXPOSURE = "maximum_exposure"
 REWARD_TYPE_PROFIT = "profit"
