@@ -62,8 +62,8 @@ class DiscretePolicy(BasePolicy):
         on_gpu = next(self.parameters()).is_cuda
         if sample:
             # CBUE MODIFICATION: Different exploration algorithm
-            int_act, act = categorical_sample(probs, use_cuda=on_gpu)
-            # int_act, act = epsilon_greedy(probs, epsilon=0.05)
+            # int_act, act = categorical_sample(probs, use_cuda=on_gpu)
+            int_act, act = epsilon_greedy(probs, epsilon=0.1)
         else:
             act = onehot_from_logits(probs)
         rets = [act]
