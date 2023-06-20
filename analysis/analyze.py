@@ -15,7 +15,7 @@ from utils.buffer import ReplayBuffer
 from tensorboardX import SummaryWriter
 
 
-NUM_ANALYSIS_RUNS = 100
+NUM_ANALYSIS_RUNS = 10
 
 
 def init(config):
@@ -33,8 +33,9 @@ def init(config):
 
     env = make_parallel_env(env_config, n_rollout_threads=1, seed=0)
     model = AttentionSAC.init_from_save(model_path, load_critic=False)
+    n_episodes = NUM_ANALYSIS_RUNS/10 if config.store_image else NUM_ANALYSIS_RUNS
     replay_buffer = ReplayBuffer(
-        max_steps=config.episode_length * NUM_ANALYSIS_RUNS,
+        max_steps=config.episode_length * n_episodes,
         num_agents=model.nagents,
         obs_dims=[env.observation_space.shape[0]] * len(env.action_space),
         ac_dims=[acsp.shape[0] if isinstance(acsp, Box) else acsp.n
@@ -51,8 +52,10 @@ def main(config):
 
     model.prep_rollouts(device='cpu')
 
-    for run_i in range(NUM_ANALYSIS_RUNS):
-        print(f"Episode {run_i+1} of {NUM_ANALYSIS_RUNS}")
+    n_episodes = NUM_ANALYSIS_RUNS/10 if config.store_image else NUM_ANALYSIS_RUNS
+
+    for run_i in range(n_episodes):
+        print(f"Episode {run_i+1} of {n_episodes}")
         obs = env.reset()
         for i in range(config.episode_length):
             torch_obs = [Variable(torch.Tensor(np.vstack(obs)),
@@ -70,6 +73,13 @@ def main(config):
                                    replay_buffer.get_buffer_data(config.episode_length).T):
                 fig, ax = plt.subplots(nrows=1, ncols=1)  # create figure & 1 axis
                 ax.plot(np.arange(len(value)), value)
+                ax.set_title(name.replace("/", "_"))
+                logger.add_figure('matplotlib/' + name, fig, run_i)
+
+            for name, value in zip(['reward/agent_0', 'reward/agent_1'], replay_buffer.rew_buffs):
+                inds = np.arange(replay_buffer.curr_i - config.episode_length, replay_buffer.curr_i)
+                fig, ax = plt.subplots(nrows=1, ncols=1)  # create figure & 1 axis
+                ax.plot(np.arange(len(inds)), value[inds])
                 ax.set_title(name.replace("/", "_"))
                 logger.add_figure('matplotlib/' + name, fig, run_i)
     logger.close()
