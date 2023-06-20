@@ -250,10 +250,10 @@ def opportunity_cost_supply_exposure(
     action_id, idx_lp, idx_from, idx_to = agent_action
 
     # Reward is positive, if the agent deposits funds into correct pool
-    if not (action_id == 1 and
+    if not ((action_id == 1 and
             idx_lp == lending_protocol_id and
             idx_from is None and
-            idx_to == plf_pool_id):
+            idx_to == plf_pool_id) or (action_id == 0)):
         return REWARD_ILLEGAL_ACTION
 
     best_interest_rate = max(
@@ -262,9 +262,18 @@ def opportunity_cost_supply_exposure(
     )
 
     lending_protocol = env.lending_protocol[lending_protocol_id]
-    supply_hash, _ = lending_protocol.supply_record[agent_id, idx_to][-1]
     plf_pool = env.lending_protocol[lending_protocol_id].plf_pools[plf_pool_id]
     opportunity_diff = plf_pool.supply_interest_rate - best_interest_rate
+
+    # if opportunity_diff is negative (i.e. the plf pool does not offer the best interest_rate)
+    # and agent chose 0 -> reward
+    if action_id == 0:
+        if opportunity_diff < 0:
+            return 100
+        else:
+            return REWARD_ILLEGAL_ACTION
+
+    supply_hash, _ = lending_protocol.supply_record[agent_id, idx_to][-1]
     # If the picked lending pool offers the best interest rate -> use borrow exposure instead
     if opportunity_diff == 0:
         opportunity_diff = 1

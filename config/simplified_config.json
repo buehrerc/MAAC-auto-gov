@@ -49,7 +49,7 @@
       "onehot_dim": 0,
       "balance": {
         "TKN": 0,
-        "USDC": 100000
+        "USDC": 1000
       }
     }
   ],
