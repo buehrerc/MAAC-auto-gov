@@ -8,6 +8,7 @@ from envs.market_env.constants import (
     REWARD_TYPE_OPPORTUNITY_COST,
     REWARD_TYPE_SUPPLY_EXPOSURE,
     REWARD_TYPE_OPPORTUNITY_SUPPLY_EXPOSURE,
+    REWARD_TYPE_OPPORTUNITY_SUPPLY,
     REWARD_TYPE_BORROW_EXPOSURE,
     REWARD_TYPE_OPPORTUNITY_BORROW_EXPOSURE,
     REWARD_CONSTANT_OPPORTUNITY_ALPHA,
@@ -18,11 +19,11 @@ from envs.market_env.constants import (
 
 
 def reward_function(
-    agent_id: int,
-    agent_action: Tuple,
-    reward_type: List[Tuple],
-    env,
-    illegal_action: bool,
+        agent_id: int,
+        agent_action: Tuple,
+        reward_type: List[Tuple],
+        env,
+        illegal_action: bool,
 ) -> float:
     """
 
@@ -49,10 +50,10 @@ def reward_function(
 
 
 def reward_function_by_type(
-    agent_id: int,
-    agent_action: Tuple,
-    reward_type: str,
-    env,
+        agent_id: int,
+        agent_action: Tuple,
+        reward_type: str,
+        env,
 ) -> float:
     """
     Supported reward_types:
@@ -81,6 +82,8 @@ def reward_function_by_type(
         return borrow_exposure(env, agent_id, agent_action)
     elif reward_type == REWARD_TYPE_OPPORTUNITY_SUPPLY_EXPOSURE:
         return opportunity_cost_supply_exposure(env, agent_id, agent_action)
+    elif reward_type == REWARD_TYPE_OPPORTUNITY_SUPPLY:
+        return supply_opportunity_cost(env, agent_id, agent_action)
     elif reward_type == REWARD_TYPE_OPPORTUNITY_BORROW_EXPOSURE:
         return opportunity_cost_borrow_exposure(env, agent_id, agent_action)
     else:
@@ -88,8 +91,8 @@ def reward_function_by_type(
 
 
 def protocol_revenue(
-    env,
-    agent_id: int,
+        env,
+        agent_id: int,
 ) -> float:
     """
     Function calculates the lending protocol's revenue by computing the revenue of each plf_pool
@@ -105,8 +108,8 @@ def protocol_revenue(
 
 
 def maximum_exposure(
-    env,
-    agent_id: int,
+        env,
+        agent_id: int,
 ) -> float:
     """
     Function computes the maximum exposure of an agent towards a lending protocol.
@@ -114,15 +117,17 @@ def maximum_exposure(
     """
     total_exposure = 0.0
     for lending_protocol in env.lending_protocol:
-        for agent_id, pool_collateral, pool_loan in list(filter(lambda x: x[0] == agent_id, lending_protocol.borrow_record)):
+        for agent_id, pool_collateral, pool_loan in list(
+                filter(lambda x: x[0] == agent_id, lending_protocol.borrow_record)):
             for borrow_hash, _ in lending_protocol.borrow_record[(agent_id, pool_collateral, pool_loan)]:
-                total_exposure += lending_protocol.plf_pools[pool_loan].get_borrow(borrow_hash) * lending_protocol.plf_pools[pool_loan].get_token_price()
+                total_exposure += lending_protocol.plf_pools[pool_loan].get_borrow(borrow_hash) * \
+                                  lending_protocol.plf_pools[pool_loan].get_token_price()
     return total_exposure
 
 
 def profit(
-    env,
-    agent_id: int,
+        env,
+        agent_id: int,
 ) -> float:
     """
     Function rewards the profit of an agent.
@@ -136,10 +141,10 @@ def profit(
 
 
 def opportunity_cost(
-    env,
-    agent_id: int,
-    alpha: float = REWARD_CONSTANT_OPPORTUNITY_ALPHA,
-    beta: float = REWARD_CONSTANT_OPPORTUNITY_BETA
+        env,
+        agent_id: int,
+        alpha: float = REWARD_CONSTANT_OPPORTUNITY_ALPHA,
+        beta: float = REWARD_CONSTANT_OPPORTUNITY_BETA
 ) -> float:
     """
     Function computes the opportunity cost of the agent's investments.
@@ -151,12 +156,12 @@ def opportunity_cost(
         [token.get_supply_interest_rate() for token in env.market.tokens.values()]
     )
     borrow_pools = (
-        [(pool.borrow_interest_rate, pool.collateral_factor)
-         for lp in env.lending_protocol for pool in lp.plf_pools] +
-        [(token.get_borrow_interest_rate(), token.get_collateral_factor())
-         for token in env.market.tokens.values()]
+            [(pool.borrow_interest_rate, pool.collateral_factor)
+             for lp in env.lending_protocol for pool in lp.plf_pools] +
+            [(token.get_borrow_interest_rate(), token.get_collateral_factor())
+             for token in env.market.tokens.values()]
     )
-    borrow_pools_ratios = [alpha * bir + beta * 1/cf for bir, cf in borrow_pools]
+    borrow_pools_ratios = [alpha * bir + beta * 1 / cf for bir, cf in borrow_pools]
     best_borrow_pool = borrow_pools[borrow_pools_ratios.index(min(borrow_pools_ratios))]
 
     opportunity_value = 0
@@ -169,25 +174,27 @@ def opportunity_cost(
                 opportunity_ratio = lending_protocol.plf_pools[pool_supply].supply_interest_rate - best_supply_pool
                 opportunity_value += supply_amount * supply_price * opportunity_ratio
         # Check for borrow opportunity cost
-        for agent_id, pool_collateral, pool_loan in list(filter(lambda x: x[0] == agent_id, lending_protocol.borrow_record)):
+        for agent_id, pool_collateral, pool_loan in list(
+                filter(lambda x: x[0] == agent_id, lending_protocol.borrow_record)):
             for borrow_hash, borrow_amount in lending_protocol.borrow_record[(agent_id, pool_collateral, pool_loan)]:
                 # borrow_amount = lending_protocol.plf_pools[pool_collateral].get_borrow(borrow_hash)
                 borrow_price = lending_protocol.plf_pools[pool_collateral].get_token_price()
                 ratio = 0
                 if lending_protocol.plf_pools[pool_collateral].collateral_factor - best_borrow_pool[1] != 0:
-                    ratio = 1/(lending_protocol.plf_pools[pool_collateral].collateral_factor - best_borrow_pool[1])
-                opportunity_ratio = alpha * (best_borrow_pool[0] - lending_protocol.plf_pools[pool_collateral].borrow_interest_rate) + \
+                    ratio = 1 / (lending_protocol.plf_pools[pool_collateral].collateral_factor - best_borrow_pool[1])
+                opportunity_ratio = alpha * (
+                            best_borrow_pool[0] - lending_protocol.plf_pools[pool_collateral].borrow_interest_rate) + \
                                     beta * ratio
                 opportunity_value += borrow_amount * borrow_price * opportunity_ratio
     return opportunity_value
 
 
 def supply_exposure(
-    env,
-    agent_id: int,
-    agent_action: Tuple,
-    lending_protocol_id: int = REWARD_CONSTANT_SUPPLY_LP_ID,
-    plf_pool_id: int = REWARD_CONSTANT_SUPPLY_PLF_ID,
+        env,
+        agent_id: int,
+        agent_action: Tuple,
+        lending_protocol_id: int = REWARD_CONSTANT_SUPPLY_LP_ID,
+        plf_pool_id: int = REWARD_CONSTANT_SUPPLY_PLF_ID,
 ) -> float:
     """
     The function rewards the immediate action of the agent by
@@ -210,11 +217,11 @@ def supply_exposure(
 
 
 def borrow_exposure(
-    env,
-    agent_id: int,
-    agent_action: Tuple,
-    lending_protocol_id: int = REWARD_CONSTANT_SUPPLY_LP_ID,
-    plf_pool_id: int = REWARD_CONSTANT_SUPPLY_PLF_ID,
+        env,
+        agent_id: int,
+        agent_action: Tuple,
+        lending_protocol_id: int = REWARD_CONSTANT_SUPPLY_LP_ID,
+        plf_pool_id: int = REWARD_CONSTANT_SUPPLY_PLF_ID,
 ) -> float:
     """
     The function rewards the immediate action of the agent by
@@ -236,11 +243,11 @@ def borrow_exposure(
 
 
 def opportunity_cost_supply_exposure(
-    env,
-    agent_id: int,
-    agent_action: Tuple,
-    lending_protocol_id: int = REWARD_CONSTANT_SUPPLY_LP_ID,
-    plf_pool_id: int = REWARD_CONSTANT_SUPPLY_PLF_ID,
+        env,
+        agent_id: int,
+        agent_action: Tuple,
+        lending_protocol_id: int = REWARD_CONSTANT_SUPPLY_LP_ID,
+        plf_pool_id: int = REWARD_CONSTANT_SUPPLY_PLF_ID,
 ) -> float:
     """
     Function rewards exposure to a specific supply pool of a specific protocol
@@ -251,9 +258,9 @@ def opportunity_cost_supply_exposure(
 
     # Reward is positive, if the agent deposits funds into correct pool
     if not ((action_id == 1 and
-            idx_lp == lending_protocol_id and
-            idx_from is None and
-            idx_to == plf_pool_id) or (action_id == 0)):
+             idx_lp == lending_protocol_id and
+             idx_from is None and
+             idx_to == plf_pool_id) or (action_id == 0)):
         return REWARD_ILLEGAL_ACTION
 
     best_interest_rate = max(
@@ -280,12 +287,42 @@ def opportunity_cost_supply_exposure(
     return plf_pool.get_supply(supply_hash) * plf_pool.get_token_price() * opportunity_diff
 
 
+def supply_opportunity_cost(
+        env,
+        agent_id: int,
+        agent_action: Tuple,
+) -> float:
+    assert len(agent_action) == 4, "Agent type is incorrect!"
+    action_id, idx_lp, idx_from, idx_to = agent_action
+
+    if not (action_id == 0 or action_id == 1):
+        return REWARD_ILLEGAL_ACTION
+
+    best_pool_interest_rate = max([plf_pool.suppy_interest_rate for lp in env.lending_protocol for plf_pool in lp.plf_pools])
+    best_market_interest_rate = max([token.supply_interest_rate for token in env.market.tokens.values()])
+    best_interest_rate = max([best_pool_interest_rate, best_market_interest_rate])
+
+    # If all supply interest rate are lower than the market -> do not supply
+    if best_pool_interest_rate < best_market_interest_rate and action_id == 0:
+        return 100
+
+    # Best interest rate is provided by a pool
+    lending_protocol = env.lending_protocol[idx_lp]
+    plf_pool = lending_protocol.plf_pools[idx_to]
+    opportunity_diff = plf_pool.supply_interest_rate - best_interest_rate
+    supply_hash, _ = lending_protocol.supply_record[agent_id, idx_to][-1]
+    # If the picked lending pool offers the best interest rate -> use borrow exposure instead
+    if opportunity_diff == 0:
+        opportunity_diff = 1
+    return plf_pool.get_supply(supply_hash) * plf_pool.get_token_price() * opportunity_diff
+
+
 def opportunity_cost_borrow_exposure(
-    env,
-    agent_id: int,
-    agent_action: Tuple,
-    lending_protocol_id: int = REWARD_CONSTANT_SUPPLY_LP_ID,
-    plf_pool_id: int = REWARD_CONSTANT_SUPPLY_PLF_ID,
+        env,
+        agent_id: int,
+        agent_action: Tuple,
+        lending_protocol_id: int = REWARD_CONSTANT_SUPPLY_LP_ID,
+        plf_pool_id: int = REWARD_CONSTANT_SUPPLY_PLF_ID,
 ) -> float:
     """
     Function rewards exposure to a specific borrow pool of a specific protocol

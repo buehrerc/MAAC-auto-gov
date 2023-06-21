@@ -159,6 +159,7 @@ REWARD_TYPE_COMPOSITE_REWARD = "composite_reward"
 REWARD_TYPE_OPPORTUNITY_COST = "opportunity_cost"
 REWARD_TYPE_SUPPLY_EXPOSURE = "supply_exposure"
 REWARD_TYPE_OPPORTUNITY_SUPPLY_EXPOSURE = "opportunity_cost_supply_exposure"
+REWARD_TYPE_OPPORTUNITY_SUPPLY = "supply_opportunity_cost"
 REWARD_TYPE_BORROW_EXPOSURE = "borrow_exposure"
 REWARD_TYPE_OPPORTUNITY_BORROW_EXPOSURE = "opportunity_cost_borrow_exposure"
 
