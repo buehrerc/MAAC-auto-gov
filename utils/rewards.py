@@ -298,13 +298,16 @@ def supply_opportunity_cost(
     if not (action_id == 0 or action_id == 1):
         return REWARD_ILLEGAL_ACTION
 
-    best_pool_interest_rate = max([plf_pool.suppy_interest_rate for lp in env.lending_protocol for plf_pool in lp.plf_pools])
+    best_pool_interest_rate = max([plf_pool.supply_interest_rate for lp in env.lending_protocol for plf_pool in lp.plf_pools])
     best_market_interest_rate = max([token.supply_interest_rate for token in env.market.tokens.values()])
     best_interest_rate = max([best_pool_interest_rate, best_market_interest_rate])
 
-    # If all supply interest rate are lower than the market -> do not supply
-    if best_pool_interest_rate < best_market_interest_rate and action_id == 0:
-        return 100
+    if action_id == 0:
+        if best_pool_interest_rate < best_market_interest_rate:
+            # If all supply interest rate are lower than the market -> do not supply
+            return 100
+        else:
+            return 0
 
     # Best interest rate is provided by a pool
     lending_protocol = env.lending_protocol[idx_lp]
