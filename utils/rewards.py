@@ -369,7 +369,7 @@ def borrow_opportunity_cost(
     assert len(agent_action) == 4, "Agent type is incorrect!"
     action_id, idx_lp, idx_from, idx_to = agent_action
 
-    if not (action_id == 0 or action_id == 1):
+    if not (action_id == 0 or action_id == 3):
         return REWARD_ILLEGAL_ACTION
 
     best_pool_interest_rate = min(
