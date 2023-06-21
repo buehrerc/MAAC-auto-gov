@@ -388,8 +388,8 @@ def borrow_opportunity_cost(
     lending_protocol = env.lending_protocol[idx_lp]
     plf_pool = lending_protocol.plf_pools[idx_from]
     opportunity_diff = best_interest_rate - plf_pool.borrow_interest_rate
-    supply_hash, _ = lending_protocol.borrow_record[agent_id, idx_to, idx_from][-1]
+    borrow_hash, _ = lending_protocol.borrow_record[agent_id, idx_to, idx_from][-1]
     # If the picked lending pool offers the best interest rate -> use borrow exposure instead
     if opportunity_diff == 0:
         opportunity_diff = 1
-    return plf_pool.get_supply(supply_hash) * plf_pool.get_token_price() * opportunity_diff
+    return plf_pool.get_borrow(borrow_hash) * plf_pool.get_token_price() * opportunity_diff
