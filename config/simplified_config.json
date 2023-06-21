@@ -68,7 +68,7 @@
   "parameter": {
     "n_rollout_threads": 1,
     "buffer_length": 2048,
-    "n_episodes": 2020,
+    "n_episodes": 20020,
     "episode_length": 25,
     "batch_size": 256,
     "num_updates": 4,
