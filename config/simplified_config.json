@@ -35,7 +35,7 @@
       "name": "GovAgent1",
       "protocol": "lending_protocol_1",
       "type": "governance",
-      "reward": [[1, "protocol_revenue"]],
+      "reward": [[1, "profit"]],
       "lr": 1e-4,
       "hidden_dim": 128,
       "onehot_dim": 0
@@ -54,7 +54,7 @@
     }
   ],
   "parameter": {
-    "n_rollout_threads": 12,
+    "n_rollout_threads": 1,
     "buffer_length": 2048,
     "n_episodes": 2020,
     "episode_length": 25,

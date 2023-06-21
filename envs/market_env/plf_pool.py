@@ -1,7 +1,7 @@
 import logging
 import torch
 from gym.core import ObsType
-from typing import Dict
+from typing import Dict, List
 from envs.market_env.market import Market
 from envs.market_env.constants import (
     PLF_INITIATOR,
@@ -10,6 +10,7 @@ from envs.market_env.constants import (
     PLF_SPREAD,
     PLF_OBSERVATION_SPACE,
     PLF_INTEREST_CHANGE_RATE,
+    PLF_FEE,
     PLF_OPTIMAL_UTILIZATION_RATIO, PLF_STABLE_BORROW_SLOPE_1, PLF_STABLE_BORROW_SLOPE_2,
     PLF_BASE_BORROW_RATE, PLF_VARIABLE_BORROW_SLOPE_1, PLF_VARIABLE_BORROW_SLOPE_2,
     LP_BORROW_SAFETY_MARGIN,
@@ -17,16 +18,19 @@ from envs.market_env.constants import (
 
 
 class PLFPool:
+
     def __init__(
-        self,
-        market: Market,
-        token_name: str = "dai",
-        initial_starting_funds: float = 1000,
-        collateral_factor: float = 0.85,
-        col_factor_change_rate: float = PLF_COLLATERAL_FACTOR_CHANGE_RATE,
-        interest_change_rate: float = PLF_INTEREST_CHANGE_RATE,
-        rb_factor: float = PLF_RB_FACTOR,
-        spread: float = PLF_SPREAD,
+            self,
+            market: Market,
+            agent_balance: List[Dict],
+            owner: int,
+            token_name: str = "dai",
+            initial_starting_funds: float = 1000,
+            collateral_factor: float = 0.85,
+            col_factor_change_rate: float = PLF_COLLATERAL_FACTOR_CHANGE_RATE,
+            interest_change_rate: float = PLF_INTEREST_CHANGE_RATE,
+            rb_factor: float = PLF_RB_FACTOR,
+            spread: float = PLF_SPREAD,
     ):
         assert 0 < collateral_factor < 1, "Collateral Factor must be between 0 and 1"
         # Gym Atributes
@@ -35,6 +39,8 @@ class PLFPool:
         # General Properties
         self.token_name = token_name
         self.token = market.get_token(self.token_name)
+        self.agent_balance = agent_balance
+        self.owner = owner
 
         # Pool Parameters
         self.collateral_factor: float = collateral_factor
@@ -57,7 +63,6 @@ class PLFPool:
 
         self.rb_factor = rb_factor
         self.spread = spread
-
     @property
     def total_supply_token(self) -> float:
         return sum(self.supply_token.values())
@@ -90,7 +95,7 @@ class PLFPool:
         assert self.utilization_ratio > -1e-9, "Utilization Ratio must be non-negative"
         if self.utilization_ratio > self.optimal_utilization_ratio:
             excess_utilization_ratio = (self.utilization_ratio - self.optimal_utilization_ratio) / (
-                        1 - self.optimal_utilization_ratio)
+                    1 - self.optimal_utilization_ratio)
             stable_borrow_interest_rate = (
                     self.base_borrow_rate
                     + self.stable_borrow_slope_1
@@ -152,9 +157,9 @@ class PLFPool:
             self.stable_borrow_slope_2, # Interest Model Slope 2
         ])
 
-# =====================================================================================================================
-#   POOL GETTER
-# =====================================================================================================================
+    # =====================================================================================================================
+    #   POOL GETTER & SETTER
+    # =====================================================================================================================
     def get_token_price(self) -> float:
         return self.token.get_price()
 
@@ -164,9 +169,9 @@ class PLFPool:
     def get_collateral_factor(self) -> float:
         return self.collateral_factor
 
-# =====================================================================================================================
-#   UPDATE POOL
-# =====================================================================================================================
+    # =====================================================================================================================
+    #   UPDATE POOL
+    # =====================================================================================================================
     def update(self) -> ObsType:
         """
         Function is being used to update the pool internal parameters
@@ -181,15 +186,24 @@ class PLFPool:
         :return: None
         """
         # Accrue interest tokens
-        for supply_key in self.supply_token.keys():
-            self.supply_token[supply_key] *= self._get_daily_interest(self.supply_interest_rate)
-        # Accrue borrow tokens
-        for borrow_key in self.borrow_token.keys():
-            self.borrow_token[borrow_key] *= self._get_daily_interest(self.borrow_interest_rate)
+        for supply_hash in self.supply_token.keys():
+            daily_interest = self.supply_token[supply_hash] * (self._get_daily_interest(self.supply_interest_rate) - 1)
+            daily_interest_fee = daily_interest * PLF_FEE
+            assert daily_interest_fee >= 0, "Fee has to be positive"
+            self.agent_balance[self.owner][self.token_name] += daily_interest_fee
+            self.supply_token[supply_hash] += daily_interest - daily_interest_fee
 
-# =====================================================================================================================
-#   POOL ACTIONS
-# =====================================================================================================================
+        # Accrue borrow tokens
+        for borrow_hash in self.borrow_token.keys():
+            daily_interest = self.borrow_token[borrow_hash] * (self._get_daily_interest(self.borrow_interest_rate) - 1)
+            daily_interest_fee = daily_interest * PLF_FEE
+            assert daily_interest_fee >= 0, "Fee has to be positive"
+            self.agent_balance[self.owner][self.token_name] += daily_interest_fee
+            self.borrow_token[borrow_hash] += daily_interest - daily_interest_fee
+
+    # =====================================================================================================================
+    #   POOL ACTIONS
+    # =====================================================================================================================
     def update_collateral_factor(self, direction: int) -> bool:
         """
         Update the collateral factor of the pool by increasing or decreasing by a constante rate
@@ -244,10 +258,10 @@ class PLFPool:
 
     def __repr__(self):
         return (
-            "PLFPool(" +
-            f"'{self.token_name}', " +
-            f"Collateral Factor: {self.collateral_factor:.3f}, " +
-            f"Total Borrow: {self.total_borrow_token:.4f}, " +
-            f"Total Available Funds: {self.total_supply_token:.4f}" +
-            ")"
+                "PLFPool(" +
+                f"'{self.token_name}', " +
+                f"Collateral Factor: {self.collateral_factor:.3f}, " +
+                f"Total Borrow: {self.total_borrow_token:.4f}, " +
+                f"Total Available Funds: {self.total_supply_token:.4f}" +
+                ")"
         )

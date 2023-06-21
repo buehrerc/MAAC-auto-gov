@@ -14,7 +14,6 @@ from envs.market_env.constants import (
     REWARD_CONSTANT_OPPORTUNITY_BETA,
     REWARD_CONSTANT_SUPPLY_LP_ID,
     REWARD_CONSTANT_SUPPLY_PLF_ID,
-    PLF_STEP_SIZE
 )
 
 
@@ -130,8 +129,9 @@ def profit(
     profit = balance[t] - balance[t-1]
     """
     diff = 0.0
+    previous_balance = env.previous_agent_balance.pop(0)
     for token_name, current in env.agent_balance[agent_id].items():
-        diff += (current - env.previous_agent_balance[agent_id].get(token_name, 0)) * env.market.get_token(token_name).get_price()
+        diff += (current - previous_balance[agent_id].get(token_name, 0)) * env.market.get_token(token_name).get_price()
     return diff
 
 

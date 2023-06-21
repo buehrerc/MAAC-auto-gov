@@ -19,7 +19,7 @@ from envs.market_env.constants import (
     LP_LIQUIDATION_PENALTY,
     LP_OBSERVATION_SPACE_1,
     LP_OBSERVATION_SPACE_2,
-    LP_DEFAULT_HEALTH_FACTOR, PLF_FEE,
+    LP_DEFAULT_HEALTH_FACTOR
 )
 
 
@@ -35,6 +35,7 @@ class LendingProtocol:
         market: Market,
         plf_pool: List[Dict],
         config: Dict,
+        agent_balance: List[Dict]
     ):
         self.name = name
         self.owner = owner
@@ -51,26 +52,27 @@ class LendingProtocol:
         # Initialize additional attributes
         self.plf_pools: List[PLFPool] = list()
         self.agent_mask: List[str] = [agent[CONFIG_AGENT_TYPE] for agent in self.config[CONFIG_AGENT]]
-        self.agent_balance = None
+        self.agent_balance = agent_balance
 
         # Gym Environment Attributes
         self.observation_space = spaces.Space()
         self.agent_action_space = list()
 
-        self.reset()
+        self.reset(new_agent_balance=self.agent_balance)
 
 # =====================================================================================================================
 #   ENVIRONMENT ACTIONS
 # =====================================================================================================================
-    def reset(self) -> ObsType:
+    def reset(self, new_agent_balance: List[Dict]) -> ObsType:
         """
         Resets the LendingProtocol and all its plf pools to the initial parameters by reinitializing the PLFPools
         :return: new_observation
         """
+        self.agent_balance = new_agent_balance
         # (Re-)Initialize the plf pools
         self.plf_pools = list(
             map(
-                lambda params: PLFPool(market=self.market, **params),
+                lambda params: PLFPool(market=self.market, owner=self.owner, agent_balance=self.agent_balance, **params),
                 self.plf_pool_config
             )
         )
@@ -165,9 +167,6 @@ class LendingProtocol:
     def render(self) -> Optional[Union[RenderFrame, List[RenderFrame]]]:
         pass
 
-    def set_agent_balance(self, agent_balance: List[Dict]) -> None:
-        self.agent_balance = agent_balance
-
     def get_name(self) -> str:
         return self.name
 
@@ -244,10 +243,7 @@ class LendingProtocol:
         withdraw_amount = self.plf_pools[pool_from].remove_supply(withdraw_hash)
 
         # 4) Add the funds to the agent's and protocol owner's balance
-        fee = (withdraw_amount - initial_amount) * PLF_FEE
-        assert fee >= 0, "Protocol fee has to be positive."
-        self.agent_balance[self.owner][pool_token] += fee
-        self.agent_balance[agent_id][pool_token] += (withdraw_amount - fee)
+        self.agent_balance[agent_id][pool_token] += withdraw_amount
 
         return False
 
@@ -332,14 +328,10 @@ class LendingProtocol:
             )
             return True
 
-        # 4) Transfer the collateral back to the agent and pay fee to owner
+        # 4) Transfer the collateral back to the agent
         collateral_token = self.plf_pools[pool_collateral].get_token_name()
         collateral_amount = self.plf_pools[pool_collateral].remove_supply(loan_hash)
-
-        fee = (collateral_amount - initial_amount) * PLF_FEE
-        assert fee >= 0, "Protocol fee has to be positive."
-        self.agent_balance[self.owner][collateral_token] += fee
-        self.agent_balance[agent_id][collateral_token] += (collateral_amount - fee)
+        self.agent_balance[agent_id][collateral_token] += collateral_amount
 
         # 5) Remove the borrow record
         self.borrow_record[(agent_id, pool_collateral, pool_loan)].pop(0)
@@ -394,10 +386,6 @@ class LendingProtocol:
         loan_id = list(map(lambda x: x[0], self.borrow_record[borrow_key])).index(loan_hash)
         collateral_amount = self.plf_pools[pool_collateral].remove_supply(loan_hash)
         loan_hash, initial_collateral_amount = self.borrow_record[borrow_key][loan_id]
-        fee = (collateral_amount - initial_collateral_amount) * PLF_FEE
-        assert fee >= 0, "Protocol fee has to be positive."
-        self.agent_balance[self.owner][collateral_token] += fee
-        collateral_amount -= fee
 
         # 5) Distribute the collateral to the liquidator (agent_id) and
         #    the remaining value to the liquidated agent (liquidated_agent_id)

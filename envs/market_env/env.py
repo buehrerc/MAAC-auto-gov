@@ -42,20 +42,24 @@ class MultiAgentEnv(gym.Env):
         self.agent_reward: List[List] = [agent[CONFIG_AGENT_REWARD] for agent in self.config[CONFIG_AGENT]]
         self.agent_ownership: List[str] = [agent.get(CONFIG_AGENT_PROTOCOL) for agent in self.config[CONFIG_AGENT]]
 
-        # Environment Attributes
+        # Initialize the market
         self.market = Market(config=self.config, seed=seed)
+
+        # Initialize agent balances
+        self.agent_balance: List[Dict] = self._initialize_agent_balance()
+        self.previous_agent_balance: List[List[Dict]] = list()
+        self.previous_agent_balance.extend([copy.deepcopy(self.agent_balance), copy.deepcopy(self.agent_balance)])
+
+        # Initialize lending protocols
         self.lending_protocol: List[LendingProtocol] = [
             LendingProtocol(owner=self.agent_ownership.index(lp_configs[CONFIG_LP_NAME]),
                             market=self.market,
                             config=self.config,
+                            agent_balance=self.agent_balance,
                             **lp_configs)
             for i, lp_configs in enumerate(self.config[CONFIG_LENDING_PROTOCOL])
         ]
         self.lending_protocol_names: List[str] = [lp.get_name() for lp in self.lending_protocol]
-
-        # Initialize agent balances
-        self.agent_balance: List[Dict] = self._initialize_agent_balance()
-        self.previous_agent_balance = copy.deepcopy(self.agent_balance)
 
         # Gym Attributes
         agent_observation_space = [AGENT_OBSERVATION_SPACE(len(self.market.tokens)) for _ in self.agent_mask]
@@ -66,10 +70,12 @@ class MultiAgentEnv(gym.Env):
 
     def reset(self) -> torch.Tensor:
         # Reset the internal state
-        lp_state = [lp.reset() for lp in self.lending_protocol]
-        market_state = self.market.reset()
         self.agent_balance = self._initialize_agent_balance()
-        self.previous_agent_balance = self.agent_balance.copy()
+        self.previous_agent_balance.clear()
+        self.previous_agent_balance.extend([copy.deepcopy(self.agent_balance), copy.deepcopy(self.agent_balance)])
+
+        lp_state = [lp.reset(new_agent_balance=self.agent_balance) for lp in self.lending_protocol]
+        market_state = self.market.reset()
 
         # Append the agents state
         agent_state = self._get_agent_state()
@@ -88,7 +94,6 @@ class MultiAgentEnv(gym.Env):
             }
             for agent_dict in self.config[CONFIG_AGENT]
         ]
-        [lp.set_agent_balance(agent_balance) for lp in self.lending_protocol]
         return agent_balance
 
     def _generate_action_mapping(self) -> List[Dict]:
@@ -140,7 +145,10 @@ class MultiAgentEnv(gym.Env):
         ])
 
         # 4) Store the state of the environment
-        self.previous_agent_balance = copy.deepcopy(self.agent_balance)
+        self.previous_agent_balance.append(copy.deepcopy(self.agent_balance))
+
+        if len(self.previous_agent_balance) > 3:
+            self.previous_agent_balance.pop(0)
 
         return (
             state,                           # Observation State
