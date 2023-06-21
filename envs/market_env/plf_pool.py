@@ -122,7 +122,9 @@ class PLFPool:
         return (1 + interest) ** (1 / 365)
 
     def get_revenue(self) -> float:
-        return self.reserve * self.get_token_price() - self.previous_reserve_value
+        revenue = self.reserve * self.get_token_price() - self.previous_reserve_value
+        self.previous_reserve_value = self.reserve * self.get_token_price()
+        return revenue
 
     def get_state(self) -> torch.Tensor:
         """
@@ -171,7 +173,6 @@ class PLFPool:
         :return: state
         """
         self.accrue_interest()
-        self.previous_reserve_value = self.reserve * self.get_token_price()
         return self.get_state()
 
     def accrue_interest(self) -> None:
