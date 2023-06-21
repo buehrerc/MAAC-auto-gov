@@ -11,6 +11,7 @@ from envs.market_env.constants import (
     REWARD_TYPE_OPPORTUNITY_SUPPLY,
     REWARD_TYPE_BORROW_EXPOSURE,
     REWARD_TYPE_OPPORTUNITY_BORROW_EXPOSURE,
+    REWARD_TYPE_OPPORTUNITY_BORROW,
     REWARD_CONSTANT_OPPORTUNITY_ALPHA,
     REWARD_CONSTANT_OPPORTUNITY_BETA,
     REWARD_CONSTANT_SUPPLY_LP_ID,
@@ -86,6 +87,8 @@ def reward_function_by_type(
         return supply_opportunity_cost(env, agent_id, agent_action)
     elif reward_type == REWARD_TYPE_OPPORTUNITY_BORROW_EXPOSURE:
         return opportunity_cost_borrow_exposure(env, agent_id, agent_action)
+    elif reward_type == REWARD_TYPE_OPPORTUNITY_BORROW:
+        return borrow_opportunity_cost(env, agent_id, agent_action)
     else:
         raise NotImplementedError("Reward function {} is unknown".format(reward_type))
 
