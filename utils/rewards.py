@@ -3,6 +3,7 @@ from typing import List, Tuple
 from envs.market_env.constants import (
     REWARD_TYPE_PROTOCOL_REVENUE,
     REWARD_TYPE_MAXIMUM_EXPOSURE,
+    REWARD_TYPE_BORROW_EXPOSURE,
     REWARD_TYPE_PROFIT,
     REWARD_ILLEGAL_ACTION,
     REWARD_TYPE_OPPORTUNITY_COST,
@@ -73,6 +74,8 @@ def reward_function_by_type(
         return protocol_revenue(env, agent_id)
     elif reward_type == REWARD_TYPE_MAXIMUM_EXPOSURE:
         return maximum_exposure(env, agent_id)
+    elif reward_type == REWARD_TYPE_BORROW_EXPOSURE:
+        return borrow_exposure(env, agent_id)
     elif reward_type == REWARD_TYPE_PROFIT:
         return profit(env, agent_id)
     elif reward_type == REWARD_TYPE_OPPORTUNITY_COST:
@@ -91,6 +94,11 @@ def reward_function_by_type(
         return borrow_opportunity_cost(env, agent_id, agent_action)
     else:
         raise NotImplementedError("Reward function {} is unknown".format(reward_type))
+
+
+# =====================================================================================================================
+#   REWARD FUNCTIONS
+# =====================================================================================================================
 
 
 def protocol_revenue(
@@ -126,6 +134,27 @@ def maximum_exposure(
                 total_exposure += lending_protocol.plf_pools[pool_loan].get_borrow(borrow_hash) * \
                                   lending_protocol.plf_pools[pool_loan].get_token_price()
     return total_exposure
+
+
+def borrow_exposure(
+        env,
+        agent_id: int,
+) -> float:
+    """
+    Function computes the exposure of borrowed assets.
+    The higher the exposure the higher the reward
+    """
+    lending_protocol = env.get_protocol_of_owner(agent_id)
+    assert lending_protocol.owner == agent_id, f"Agent {agent_id} is not owner of the lending protocol"
+
+    total_exposure = 0.0
+    for keys, values in lending_protocol.borrow_record.items():
+        _, _, pool_loan = keys
+        borrow_hash, _ = values
+        total_exposure += lending_protocol.plf_pools[pool_loan].get_borrow(borrow_hash) * \
+                          lending_protocol.plf_pools[pool_loan].get_token_price()
+    return total_exposure
+
 
 
 def profit(
