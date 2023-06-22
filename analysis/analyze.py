@@ -16,7 +16,7 @@ from utils.buffer import ReplayBuffer
 from tensorboardX import SummaryWriter
 
 
-NUM_ANALYSIS_RUNS = 100
+NUM_ANALYSIS_RUNS = 10
 
 
 def init(config):
@@ -99,7 +99,7 @@ def main(config):
         tmp[f'reward/agent_{i}'] = replay_buffer.rew_buffs[i][:config.episode_length]
         tmp[f'action/agent_{i}'] = np.argmax(replay_buffer.ac_buffs[i][:config.episode_length], axis=1)
         data_list.append(tmp)
-    df = pd.concat(data_list).fillna(0)
+    df = pd.concat(data_list, axis=1).fillna(0)
     df.to_csv(log_dir / 'episode_data.csv')
     logger.close()
 
