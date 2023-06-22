@@ -45,8 +45,7 @@ class PLFPool:
         # Pool Parameters
         self.collateral_factor: float = collateral_factor
         self.col_factor_change_rate: float = col_factor_change_rate
-        # self.supply_token: Dict[str, float] = {PLF_INITIATOR: initial_starting_funds}
-        self.supply_token: Dict[str, float] = dict()
+        self.supply_token: Dict[str, float] = {PLF_INITIATOR: initial_starting_funds}
         # Set the initial utilization ratio to the optimal utilization ratio
         self.borrow_token: Dict[str, float] = {PLF_INITIATOR: initial_starting_funds * PLF_OPTIMAL_UTILIZATION_RATIO}
 
