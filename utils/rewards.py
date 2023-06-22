@@ -3,7 +3,7 @@ from typing import List, Tuple
 from envs.market_env.constants import (
     REWARD_TYPE_PROTOCOL_REVENUE,
     REWARD_TYPE_MAXIMUM_EXPOSURE,
-    REWARD_TYPE_BORROW_EXPOSURE,
+    REWARD_TYPE_MAXIMAL_BORROW_EXPOSURE,
     REWARD_TYPE_PROFIT,
     REWARD_ILLEGAL_ACTION,
     REWARD_TYPE_OPPORTUNITY_COST,
@@ -74,8 +74,8 @@ def reward_function_by_type(
         return protocol_revenue(env, agent_id)
     elif reward_type == REWARD_TYPE_MAXIMUM_EXPOSURE:
         return maximum_exposure(env, agent_id)
-    elif reward_type == REWARD_TYPE_BORROW_EXPOSURE:
-        return borrow_exposure(env, agent_id)
+    elif reward_type == REWARD_TYPE_MAXIMAL_BORROW_EXPOSURE:
+        return maximal_borrow_exposure(env, agent_id)
     elif reward_type == REWARD_TYPE_PROFIT:
         return profit(env, agent_id)
     elif reward_type == REWARD_TYPE_OPPORTUNITY_COST:
@@ -136,7 +136,7 @@ def maximum_exposure(
     return total_exposure
 
 
-def borrow_exposure(
+def maximal_borrow_exposure(
         env,
         agent_id: int,
 ) -> float:
@@ -150,11 +150,10 @@ def borrow_exposure(
     total_exposure = 0.0
     for keys, values in lending_protocol.borrow_record.items():
         _, _, pool_loan = keys
-        borrow_hash, _ = values
-        total_exposure += lending_protocol.plf_pools[pool_loan].get_borrow(borrow_hash) * \
-                          lending_protocol.plf_pools[pool_loan].get_token_price()
+        for borrow_hash, _ in values:
+            total_exposure += lending_protocol.plf_pools[pool_loan].get_borrow(borrow_hash) * \
+                              lending_protocol.plf_pools[pool_loan].get_token_price()
     return total_exposure
-
 
 
 def profit(
