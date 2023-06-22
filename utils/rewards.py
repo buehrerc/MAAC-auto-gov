@@ -308,7 +308,7 @@ def supply_opportunity_cost(
     if action_id == 0:
         if best_pool_interest_rate < best_market_interest_rate:
             # If all supply interest rate are lower than the market -> do not supply
-            return 100
+            return 10
         else:
             return 0
 
