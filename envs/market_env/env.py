@@ -145,6 +145,7 @@ class MultiAgentEnv(gym.Env):
         ])
 
         # 4) Store the state of the environment
+        self.previous_agent_balance.pop(0)
         self.previous_agent_balance.append(copy.deepcopy(self.agent_balance))
 
         if len(self.previous_agent_balance) > 3:

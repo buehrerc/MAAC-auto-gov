@@ -137,7 +137,7 @@ def profit(
     profit = balance[t] - balance[t-1]
     """
     diff = 0.0
-    previous_balance = env.previous_agent_balance.pop(0)
+    previous_balance = env.previous_agent_balance[0]
     for token_name, current in env.agent_balance[agent_id].items():
         diff += (current - previous_balance[agent_id].get(token_name, 0)) * env.market.get_token(token_name).get_price()
     return diff
@@ -279,7 +279,7 @@ def opportunity_cost_supply_exposure(
     # and agent chose 0 -> reward
     if action_id == 0:
         if opportunity_diff < 0:
-            return 100
+            return 10
         else:
             return REWARD_ILLEGAL_ACTION
 
