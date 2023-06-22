@@ -80,7 +80,7 @@
   "parameter": {
     "n_rollout_threads": 12,
     "buffer_length": 2048,
-    "n_episodes": 4020,
+    "n_episodes": 2020,
     "episode_length": 25,
     "batch_size": 256,
     "num_updates": 4,
