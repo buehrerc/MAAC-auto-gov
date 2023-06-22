@@ -28,21 +28,6 @@
           "collateral_factor": 0.85
         }
       ]
-    },
-    {
-      "name": "lending_protocol_2",
-      "plf_pool": [
-        {
-          "token_name": "TKN",
-          "initial_starting_funds": 10000,
-          "collateral_factor": 0.85
-        },
-        {
-          "token_name": "USDC",
-          "initial_starting_funds": 10000,
-          "collateral_factor": 0.85
-        }
-      ]
     }
   ],
   "agent": [
