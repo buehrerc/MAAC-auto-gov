@@ -408,9 +408,9 @@ def borrow_opportunity_cost(
     if action_id == 0:
         if best_pool_interest_rate > best_market_interest_rate:
             # If all borrow interest rates are higher than the market -> do not supply
-            return 0
+            return 10
         else:
-            return 0
+            return REWARD_ILLEGAL_ACTION
 
     # Best interest rate is provided by a pool
     lending_protocol = env.lending_protocol[idx_lp]
