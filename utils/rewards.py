@@ -273,49 +273,49 @@ def borrow_exposure(
     return plf_pool.get_borrow(borrow_hash) * plf_pool.get_token_price()
 
 
-def opportunity_cost_supply_exposure(
-        env,
-        agent_id: int,
-        agent_action: Tuple,
-        lending_protocol_id: int = REWARD_CONSTANT_SUPPLY_LP_ID,
-        plf_pool_id: int = REWARD_CONSTANT_SUPPLY_PLF_ID,
-) -> float:
-    """
-    Function rewards exposure to a specific supply pool of a specific protocol
-    provided that the supply interest is lower than the competing supply interest
-    """
-    assert len(agent_action) == 4, "Agent type is incorrect!"
-    action_id, idx_lp, idx_from, idx_to = agent_action
-
-    # Reward is positive, if the agent deposits funds into correct pool
-    if not ((action_id == 1 and
-             idx_lp == lending_protocol_id and
-             idx_from is None and
-             idx_to == plf_pool_id) or (action_id == 0)):
-        return REWARD_ILLEGAL_ACTION
-
-    best_interest_rate = max(
-        [lp.plf_pools[plf_pool_id].supply_interest_rate for lp in env.lending_protocol] +
-        [env.lending_protocol[lending_protocol_id].plf_pools[plf_pool_id].token.get_supply_interest_rate()]
-    )
-
-    lending_protocol = env.lending_protocol[lending_protocol_id]
-    plf_pool = env.lending_protocol[lending_protocol_id].plf_pools[plf_pool_id]
-    opportunity_diff = plf_pool.supply_interest_rate - best_interest_rate
-
-    # if opportunity_diff is negative (i.e. the plf pool does not offer the best interest_rate)
-    # and agent chose 0 -> reward
-    if action_id == 0:
-        if opportunity_diff < 0:
-            return 10
-        else:
-            return REWARD_ILLEGAL_ACTION
-
-    supply_hash, _ = lending_protocol.supply_record[agent_id, idx_to][-1]
-    # If the picked lending pool offers the best interest rate -> use borrow exposure instead
-    if opportunity_diff == 0:
-        opportunity_diff = 1
-    return plf_pool.get_supply(supply_hash) * plf_pool.get_token_price() * opportunity_diff
+# def opportunity_cost_supply_exposure(
+#         env,
+#         agent_id: int,
+#         agent_action: Tuple,
+#         lending_protocol_id: int = REWARD_CONSTANT_SUPPLY_LP_ID,
+#         plf_pool_id: int = REWARD_CONSTANT_SUPPLY_PLF_ID,
+# ) -> float:
+#     """
+#     Function rewards exposure to a specific supply pool of a specific protocol
+#     provided that the supply interest is lower than the competing supply interest
+#     """
+#     assert len(agent_action) == 4, "Agent type is incorrect!"
+#     action_id, idx_lp, idx_from, idx_to = agent_action
+#
+#     # Reward is positive, if the agent deposits funds into correct pool
+#     if not ((action_id == 1 and
+#              idx_lp == lending_protocol_id and
+#              idx_from is None and
+#              idx_to == plf_pool_id) or (action_id == 0)):
+#         return REWARD_ILLEGAL_ACTION
+#
+#     best_interest_rate = max(
+#         [lp.plf_pools[plf_pool_id].supply_interest_rate for lp in env.lending_protocol] +
+#         [env.lending_protocol[lending_protocol_id].plf_pools[plf_pool_id].token.get_supply_interest_rate()]
+#     )
+#
+#     lending_protocol = env.lending_protocol[lending_protocol_id]
+#     plf_pool = env.lending_protocol[lending_protocol_id].plf_pools[plf_pool_id]
+#     opportunity_diff = plf_pool.supply_interest_rate - best_interest_rate
+#
+#     # if opportunity_diff is negative (i.e. the plf pool does not offer the best interest_rate)
+#     # and agent chose 0 -> reward
+#     if action_id == 0:
+#         if opportunity_diff < 0:
+#             return 10
+#         else:
+#             return REWARD_ILLEGAL_ACTION
+#
+#     supply_hash, _ = lending_protocol.supply_record[agent_id, idx_to][-1]
+#     # If the picked lending pool offers the best interest rate -> use borrow exposure instead
+#     if opportunity_diff == 0:
+#         opportunity_diff = 1
+#     return plf_pool.get_supply(supply_hash) * plf_pool.get_token_price() * opportunity_diff
 
 
 def supply_opportunity_cost(
@@ -338,7 +338,7 @@ def supply_opportunity_cost(
             # If all supply interest rate are lower than the market -> do not supply
             return 10
         else:
-            return 0
+            return REWARD_ILLEGAL_ACTION
 
     # Best interest rate is provided by a pool
     lending_protocol = env.lending_protocol[idx_lp]
@@ -351,42 +351,42 @@ def supply_opportunity_cost(
     return plf_pool.get_supply(supply_hash) * plf_pool.get_token_price() * opportunity_diff
 
 
-def opportunity_cost_borrow_exposure(
-        env,
-        agent_id: int,
-        agent_action: Tuple,
-        lending_protocol_id: int = REWARD_CONSTANT_SUPPLY_LP_ID,
-        plf_pool_id: int = REWARD_CONSTANT_SUPPLY_PLF_ID,
-) -> float:
-    """
-    Function rewards exposure to a specific borrow pool of a specific protocol
-    provided that the supply interest is lower than the competing supply interest
-    """
-    # TODO: current implementation does not correspond to the definition in the report
-    #       => the collateral factor is missing
-    assert len(agent_action) == 4, "Agent type is incorrect!"
-    action_id, idx_lp, idx_from, idx_to = agent_action
-
-    ## Reward is positive, if the agent deposits funds into correct pool
-    if not ((action_id == 1 and
-            idx_lp == lending_protocol_id and
-            idx_from is None and
-            idx_to == plf_pool_id) or (action_id == 0)):
-        return REWARD_ILLEGAL_ACTION
-
-    best_interest_rate = min(
-        [lp.plf_pools[plf_pool_id].borrow_interest_rate for lp in env.lending_protocol] +
-        [env.lending_protocol[lending_protocol_id].plf_pools[plf_pool_id].token.get_borrow_interest_rate()]
-    )
-
-    lending_protocol = env.lending_protocol[lending_protocol_id]
-    borrow_hash, _ = lending_protocol.borrow_record[agent_id, idx_to, idx_from][-1]
-    plf_pool = lending_protocol.plf_pools[plf_pool_id]
-    opportunity_diff = plf_pool.borrow_interest_rate - best_interest_rate
-    # If the picked lending pool offers the best interest rate -> use borrow exposure instead
-    if opportunity_diff == 0:
-        opportunity_diff = 1
-    return plf_pool.get_borrow(borrow_hash) * plf_pool.get_token_price() * opportunity_diff
+# def opportunity_cost_borrow_exposure(
+#         env,
+#         agent_id: int,
+#         agent_action: Tuple,
+#         lending_protocol_id: int = REWARD_CONSTANT_SUPPLY_LP_ID,
+#         plf_pool_id: int = REWARD_CONSTANT_SUPPLY_PLF_ID,
+# ) -> float:
+#     """
+#     Function rewards exposure to a specific borrow pool of a specific protocol
+#     provided that the supply interest is lower than the competing supply interest
+#     """
+#     # TODO: current implementation does not correspond to the definition in the report
+#     #       => the collateral factor is missing
+#     assert len(agent_action) == 4, "Agent type is incorrect!"
+#     action_id, idx_lp, idx_from, idx_to = agent_action
+#
+#     ## Reward is positive, if the agent deposits funds into correct pool
+#     if not ((action_id == 1 and
+#             idx_lp == lending_protocol_id and
+#             idx_from is None and
+#             idx_to == plf_pool_id) or (action_id == 0)):
+#         return REWARD_ILLEGAL_ACTION
+#
+#     best_interest_rate = min(
+#         [lp.plf_pools[plf_pool_id].borrow_interest_rate for lp in env.lending_protocol] +
+#         [env.lending_protocol[lending_protocol_id].plf_pools[plf_pool_id].token.get_borrow_interest_rate()]
+#     )
+#
+#     lending_protocol = env.lending_protocol[lending_protocol_id]
+#     borrow_hash, _ = lending_protocol.borrow_record[agent_id, idx_to, idx_from][-1]
+#     plf_pool = lending_protocol.plf_pools[plf_pool_id]
+#     opportunity_diff = plf_pool.borrow_interest_rate - best_interest_rate
+#     # If the picked lending pool offers the best interest rate -> use borrow exposure instead
+#     if opportunity_diff == 0:
+#         opportunity_diff = 1
+#     return plf_pool.get_borrow(borrow_hash) * plf_pool.get_token_price() * opportunity_diff
 
 
 def borrow_opportunity_cost(
