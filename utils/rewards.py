@@ -368,13 +368,13 @@ def opportunity_cost_borrow_exposure(
     action_id, idx_lp, idx_from, idx_to = agent_action
 
     ## Reward is positive, if the agent deposits funds into correct pool
-    if not (action_id == 1 and
+    if not ((action_id == 1 and
             idx_lp == lending_protocol_id and
             idx_from is None and
-            idx_to == plf_pool_id):
+            idx_to == plf_pool_id) or (action_id == 0)):
         return REWARD_ILLEGAL_ACTION
 
-    best_interest_rate = max(
+    best_interest_rate = min(
         [lp.plf_pools[plf_pool_id].borrow_interest_rate for lp in env.lending_protocol] +
         [env.lending_protocol[lending_protocol_id].plf_pools[plf_pool_id].token.get_borrow_interest_rate()]
     )
@@ -408,7 +408,7 @@ def borrow_opportunity_cost(
     if action_id == 0:
         if best_pool_interest_rate > best_market_interest_rate:
             # If all borrow interest rates are higher than the market -> do not supply
-            return 100
+            return 0
         else:
             return 0
 
