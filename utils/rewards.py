@@ -338,7 +338,7 @@ def supply_opportunity_cost(
             # If all supply interest rate are lower than the market -> do not supply
             return 100
         else:
-            return 0
+            return REWARD_ILLEGAL_ACTION
 
     # Best interest rate is provided by a pool
     lending_protocol = env.lending_protocol[idx_lp]
