@@ -137,7 +137,7 @@ def maximal_borrow_exposure(
         for borrow_hash, _ in values:
             total_exposure += lending_protocol.plf_pools[pool_loan].get_borrow(borrow_hash) * \
                               lending_protocol.plf_pools[pool_loan].get_token_price()
-    previous_exposure = env.previous_maximal_exposure if env.previous_maximal_exposure is not None else 0
+    previous_exposure = env.previous_maximal_exposure if hasattr(env, "previous_maximal_exposure") else 0
     new_exposure = total_exposure - previous_exposure
     env.previous_maximal_exposure = total_exposure
     return new_exposure
