@@ -281,7 +281,7 @@ def borrow_opportunity_cost(
     if action_id == 0:
         if best_pool_interest_rate > best_market_interest_rate:
             # If all borrow interest rates are higher than the market -> do not supply
-            return 10
+            return -1 * REWARD_ILLEGAL_ACTION
         else:
             return REWARD_ILLEGAL_ACTION
 
