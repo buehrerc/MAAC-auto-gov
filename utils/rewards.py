@@ -165,10 +165,12 @@ def borrow_interest_rate(
         env,
         agent_id: int,
 ) -> float:
-    best_pool_interest_rate = min([plf_pool.borrow_interest_rate for lp in env.lending_protocol for plf_pool in lp.plf_pools])
-    best_market_interest_rate = min([token.borrow_interest_rate for token in env.market.tokens.values()])
+    lending_protocol = env.get_protocol_of_owner(agent_id)
+    own_interest_rate = min([plf_pool.borrow_interest_rate for plf_pool in lending_protocol])
+    concurrent_interest_rate = min([token.borrow_interest_rate for token in env.market.tokens.values()] +
+                                   [plf_pool.borrow_interest_rate for lp in env.lending_protocol for plf_pool in lp])
 
-    if best_pool_interest_rate < best_market_interest_rate:
+    if own_interest_rate < concurrent_interest_rate:
         return -REWARD_ILLEGAL_ACTION
     else:
         return REWARD_ILLEGAL_ACTION
