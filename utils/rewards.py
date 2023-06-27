@@ -393,7 +393,6 @@ def opportunity_cost_supply_exposure(
     return plf_pool.get_supply(supply_hash) * plf_pool.get_token_price() * opportunity_diff
 
 
-
 def opportunity_cost_borrow_exposure(
         env,
         agent_id: int,

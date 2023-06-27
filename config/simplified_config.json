@@ -67,18 +67,18 @@
     {
       "name": "UserAgent1",
       "type": "user",
-      "reward": [[1, "borrow_opportunity_cost"]],
+      "reward": [[1, "profit"]],
       "lr": 1e-4,
       "hidden_dim": 128,
       "onehot_dim": 0,
       "balance": {
-        "TKN": 100000,
-        "USDC": 0
+        "TKN": 0,
+        "USDC": 10000
       }
     }
   ],
   "parameter": {
-    "n_rollout_threads": 12,
+    "n_rollout_threads": 1,
     "buffer_length": 10000,
     "n_episodes": 2020,
     "episode_length": 25,
