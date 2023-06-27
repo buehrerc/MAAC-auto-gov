@@ -19,12 +19,12 @@
       "plf_pool": [
         {
           "token_name": "TKN",
-          "initial_starting_funds": 500,
+          "initial_starting_funds": 10000,
           "collateral_factor": 0.85
         },
         {
           "token_name": "USDC",
-          "initial_starting_funds": 500,
+          "initial_starting_funds": 10000,
           "collateral_factor": 0.85
         }
       ]
@@ -72,7 +72,7 @@
       "hidden_dim": 128,
       "onehot_dim": 0,
       "balance": {
-        "TKN": 100000,
+        "TKN": 1000,
         "USDC": 0
       }
     }
@@ -86,7 +86,7 @@
     "num_updates": 4,
     "save_interval": 500,
     "attend_heads": 4,
-    "gamma": 0.1,
+    "gamma": 0.9,
     "reward_scale": 1e+4,
     "seed": 1,
     "pi_lr": 1e-4,
