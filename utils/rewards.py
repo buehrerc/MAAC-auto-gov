@@ -191,15 +191,15 @@ def opportunity_cost(
         else:
             return 10000
     elif action_id == 3:  # Borrow
-        if env.lending_protocol[idx_lp].plf_pools[idx_from].supply_interest_rate <= best_borrow_interest():
+        if env.lending_protocol[idx_lp].plf_pools[idx_from].borrow_interest_rate <= best_borrow_interest():
             return 10000
         else:
             return REWARD_ILLEGAL_ACTION
     elif action_id == 4:  # Repay
-        if env.lending_protocol[idx_lp].plf_pools[idx_from].supply_interest_rate <= best_borrow_interest():
-            return 10000
-        else:
+        if env.lending_protocol[idx_lp].plf_pools[idx_from].borrow_interest_rate <= best_borrow_interest():
             return REWARD_ILLEGAL_ACTION
+        else:
+            return 10000
     elif action_id == 5:  # Liquidate
         if min([i[2] if i is not None else 3 for lp in env.lending_protocol for i in lp.worst_loans.values()]) >= 1:
             return 10000
