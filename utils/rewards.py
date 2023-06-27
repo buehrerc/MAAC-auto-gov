@@ -137,7 +137,9 @@ def maximal_borrow_exposure(
         for borrow_hash, _ in values:
             total_exposure += lending_protocol.plf_pools[pool_loan].get_borrow(borrow_hash) * \
                               lending_protocol.plf_pools[pool_loan].get_token_price()
-    return total_exposure
+    new_exposure = total_exposure - env.previous_maximal_exposure
+    env.previous_maximal_exposure = total_exposure
+    return new_exposure
 
 
 def profit(
