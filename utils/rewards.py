@@ -76,6 +76,8 @@ def reward_function_by_type(
         return maximal_borrow_exposure(env, agent_id)
     elif reward_type == REWARD_TYPE_PROFIT:
         return profit(env, agent_id)
+    elif reward_type == REWARD_TYPE_OPPORTUNITY_COST:
+        return opportunity_cost(env, agent_id, agent_action)
     elif reward_type == REWARD_TYPE_SUPPLY_EXPOSURE:
         return supply_exposure(env, agent_id, agent_action)
     elif reward_type == REWARD_TYPE_BORROW_EXPOSURE:
@@ -88,8 +90,6 @@ def reward_function_by_type(
     # Legacy reward functions
     elif reward_type == REWARD_TYPE_MAXIMUM_EXPOSURE:
         return maximum_exposure(env, agent_id)
-    elif reward_type == REWARD_TYPE_OPPORTUNITY_COST:
-        return opportunity_cost(env, agent_id)
     elif reward_type == REWARD_TYPE_OPPORTUNITY_BORROW_EXPOSURE:
         return opportunity_cost_borrow_exposure(env, agent_id, agent_action)
     elif reward_type == REWARD_TYPE_OPPORTUNITY_SUPPLY_EXPOSURE:
@@ -156,6 +156,57 @@ def profit(
     for token_name, current in env.agent_balance[agent_id].items():
         diff += (current - previous_balance[agent_id].get(token_name, 0)) * env.market.get_token(token_name).get_price()
     return diff
+
+
+def opportunity_cost(
+        env,
+        agent_id: int,
+        agent_action: Tuple,
+) -> float:
+    """
+    Function rewards actions which inflict a positive opportunity cost.
+    The rewards are discrete.
+    """
+    assert len(agent_action) == 4, "Agent type is incorrect!"
+    action_id, idx_lp, idx_from, idx_to = agent_action
+
+    def best_supply_interest():
+        best_pool_interest_rate = max([plf_pool.supply_interest_rate for lp in env.lending_protocol for plf_pool in lp.plf_pools])
+        best_market_interest_rate = max([token.supply_interest_rate for token in env.market.tokens.values()])
+        return max([best_pool_interest_rate, best_market_interest_rate])
+
+    def best_borrow_interest():
+        best_pool_interest_rate = min([plf_pool.borrow_interest_rate for lp in env.lending_protocol for plf_pool in lp.plf_pools])
+        best_market_interest_rate = min([token.borrow_interest_rate for token in env.market.tokens.values()])
+        return min([best_pool_interest_rate, best_market_interest_rate])
+
+    if action_id == 1:  # Deposit
+        if env.lending_protocol[idx_lp].plf_pools[idx_to].supply_interest_rate >= best_supply_interest():
+            return 10000
+        else:
+            return REWARD_ILLEGAL_ACTION
+    elif action_id == 2:  # Withdraw
+        if env.lending_protocol[idx_lp].plf_pools[idx_to].supply_interest_rate >= best_supply_interest():
+            return REWARD_ILLEGAL_ACTION
+        else:
+            return 10000
+    elif action_id == 3:  # Borrow
+        if env.lending_protocol[idx_lp].plf_pools[idx_from].supply_interest_rate <= best_borrow_interest():
+            return 10000
+        else:
+            return REWARD_ILLEGAL_ACTION
+    elif action_id == 4:  # Repay
+        if env.lending_protocol[idx_lp].plf_pools[idx_from].supply_interest_rate <= best_borrow_interest():
+            return 10000
+        else:
+            return REWARD_ILLEGAL_ACTION
+    elif action_id == 5:  # Liquidate
+        if min([i[2] if i is not None else 3 for lp in env.lending_protocol for i in lp.worst_loans.values()]) >= 1:
+            return 10000
+        else:
+            return REWARD_ILLEGAL_ACTION
+    else:  # No action or Liquidate
+        return REWARD_ILLEGAL_ACTION
 
 
 def supply_exposure(
@@ -281,7 +332,7 @@ def borrow_opportunity_cost(
 # =====================================================================================================================
 #   LEGACY REWARD FUNCTIONS
 # =====================================================================================================================
-def opportunity_cost(
+def opportunity_cost_legacy(
         env,
         agent_id: int,
         alpha: float = REWARD_CONSTANT_OPPORTUNITY_ALPHA,
