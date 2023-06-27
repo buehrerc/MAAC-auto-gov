@@ -182,7 +182,7 @@ def opportunity_cost(
 
     if action_id == 1:  # Deposit
         if env.lending_protocol[idx_lp].plf_pools[idx_to].supply_interest_rate >= best_supply_interest():
-            return 10000
+            return 100
         else:
             return REWARD_ILLEGAL_ACTION
     elif action_id == 2:  # Withdraw
