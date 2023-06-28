@@ -54,7 +54,7 @@
     }
   ],
   "parameter": {
-    "n_rollout_threads": 4,
+    "n_rollout_threads": 12,
     "buffer_length": 10000,
     "n_episodes": 2020,
     "episode_length": 25,
