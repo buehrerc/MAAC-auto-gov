@@ -293,6 +293,8 @@ def borrow_opportunity_cost(
     # If the picked lending pool offers the best interest rate -> use borrow exposure instead
     if opportunity_diff == 0:
         opportunity_diff = 1
+    else:
+        opportunity_diff *= 10
     return plf_pool.get_borrow(borrow_hash) * plf_pool.get_token_price() * opportunity_diff
 
 

@@ -16,7 +16,7 @@ from utils.buffer import ReplayBuffer
 from tensorboardX import SummaryWriter
 
 
-NUM_ANALYSIS_RUNS = 3
+NUM_ANALYSIS_RUNS = 100
 
 
 def init(config):
