@@ -288,14 +288,21 @@ def borrow_opportunity_cost(
         return -1 * REWARD_ILLEGAL_ACTION
 
     # Best interest rate is provided by a pool
-    lending_protocol = env.lending_protocol[idx_lp]
-    plf_pool = lending_protocol.plf_pools[idx_from]
-    opportunity_diff = best_interest_rate - plf_pool.borrow_interest_rate
-    borrow_hash, _ = lending_protocol.borrow_record[agent_id, idx_to, idx_from][-1]
+    borrow_value = 10000
+    picked_interest_rate = best_market_interest_rate
+
+    if action_id == 3:
+        lending_protocol = env.lending_protocol[idx_lp]
+        plf_pool = lending_protocol.plf_pools[idx_from]
+        borrow_hash, _ = lending_protocol.borrow_record[agent_id, idx_to, idx_from][-1]
+        picked_interest_rate = plf_pool.borrow_interest_rate
+        borrow_value = plf_pool.get_borrow(borrow_hash) * plf_pool.get_token_price()
+
     # If the picked lending pool offers the best interest rate -> use borrow exposure instead
+    opportunity_diff = best_interest_rate - picked_interest_rate
     if opportunity_diff == 0:
         opportunity_diff = 1
-    return plf_pool.get_borrow(borrow_hash) * plf_pool.get_token_price() * opportunity_diff
+    return borrow_value * opportunity_diff
 
 
 # =====================================================================================================================
