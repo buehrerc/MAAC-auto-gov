@@ -267,6 +267,11 @@ def borrow_opportunity_cost(
         agent_id: int,
         agent_action: Tuple,
 ) -> float:
+    """
+    Function centers its reward around the opportunity costs of the agent's actions.
+    More specifically, it focuses on the opportunity costs which a borrowing action inflicts.
+    """
+
     assert len(agent_action) == 4, "Agent type is incorrect!"
     action_id, idx_lp, idx_from, idx_to = agent_action
 
@@ -278,12 +283,9 @@ def borrow_opportunity_cost(
     best_market_interest_rate = min([token.borrow_interest_rate for token in env.market.tokens.values()])
     best_interest_rate = min([best_pool_interest_rate, best_market_interest_rate])
 
-    if action_id == 0:
-        if best_pool_interest_rate > best_market_interest_rate:
-            # If all borrow interest rates are higher than the market -> do not supply
-            return -1 * REWARD_ILLEGAL_ACTION
-        else:
-            return REWARD_ILLEGAL_ACTION
+    if action_id == 0 and best_market_interest_rate < best_pool_interest_rate:
+        # If all borrow interest rates are higher than the market -> do not supply
+        return -1 * REWARD_ILLEGAL_ACTION
 
     # Best interest rate is provided by a pool
     lending_protocol = env.lending_protocol[idx_lp]
