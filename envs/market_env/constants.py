@@ -153,18 +153,18 @@ ENVIRONMENT_STATES = lambda agent_num, token_num, plf_in_lp_num: sum([
 # 5) Reward Function Constants
 REWARD_ILLEGAL_ACTION = -10000
 REWARD_TYPE_PROTOCOL_REVENUE = "protocol_revenue"
-REWARD_TYPE_MAXIMUM_EXPOSURE = "maximum_exposure"
 REWARD_TYPE_MAXIMAL_BORROW_EXPOSURE = "maximal_borrow_exposure"
 REWARD_TYPE_BORROW_INTEREST_RATE = "borrow_interest_rate"
 REWARD_TYPE_PROFIT = "profit"
-REWARD_TYPE_COMPOSITE_REWARD = "composite_reward"
-REWARD_TYPE_OPPORTUNITY_COST = "opportunity_cost"
 REWARD_TYPE_SUPPLY_EXPOSURE = "supply_exposure"
-REWARD_TYPE_OPPORTUNITY_SUPPLY_EXPOSURE = "opportunity_cost_supply_exposure"
 REWARD_TYPE_OPPORTUNITY_SUPPLY = "supply_opportunity_cost"
 REWARD_TYPE_BORROW_EXPOSURE = "borrow_exposure"
-REWARD_TYPE_OPPORTUNITY_BORROW_EXPOSURE = "opportunity_cost_borrow_exposure"
 REWARD_TYPE_OPPORTUNITY_BORROW = "borrow_opportunity_cost"
+
+REWARD_TYPE_MAXIMUM_EXPOSURE = "maximum_exposure"
+REWARD_TYPE_OPPORTUNITY_COST = "opportunity_cost"
+REWARD_TYPE_OPPORTUNITY_SUPPLY_EXPOSURE = "opportunity_cost_supply_exposure"
+REWARD_TYPE_OPPORTUNITY_BORROW_EXPOSURE = "opportunity_cost_borrow_exposure"
 
 REWARD_CONSTANT_OPPORTUNITY_ALPHA = 1
 REWARD_CONSTANT_OPPORTUNITY_BETA = 0.1
