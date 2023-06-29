@@ -72,7 +72,7 @@
       "hidden_dim": 128,
       "onehot_dim": 0,
       "balance": {
-        "TKN": 100000,
+        "TKN": 0,
         "USDC": 100000
       }
     }
