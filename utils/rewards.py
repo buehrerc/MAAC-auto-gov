@@ -264,7 +264,8 @@ def supply_opportunity_cost(
         opportunity_diff = 1
     else:
         opportunity_diff *= 100
-    return supply_value * opportunity_diff
+    reward = supply_value * opportunity_diff
+    return reward if reward > REWARD_ILLEGAL_ACTION else REWARD_ILLEGAL_ACTION
 
 
 def borrow_opportunity_cost(
