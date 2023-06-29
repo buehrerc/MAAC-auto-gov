@@ -277,10 +277,10 @@ def borrow_opportunity_cost(
     if not (action_id == 0 or action_id == 3):
         return REWARD_ILLEGAL_ACTION
 
-    best_pool_interest_rate = min([plf.borrow_interest_rate for lp in env.lending_protocol for plf in lp.plf_pools])
+    best_pool_interest_rate = min([plf.previous_borrow_interest_rate[0] for lp in env.lending_protocol for plf in lp.plf_pools])
     best_market_interest_rate = min([token.borrow_interest_rate for token in env.market.tokens.values()])
     best_interest_rate = min(best_pool_interest_rate, best_market_interest_rate)
-    agent_interest_rate = (env.lending_protocol[idx_lp].plf_pools[idx_from].borrow_interest_rate
+    agent_interest_rate = (env.lending_protocol[idx_lp].plf_pools[idx_from].previous_borrow_interest_rate[0]
                            if action_id == 3
                            else best_market_interest_rate)
     borrow_value = 10000

@@ -57,12 +57,14 @@ class PLFPool:
         self.stable_borrow_slope_2: float = PLF_STABLE_BORROW_SLOPE_2
         self.variable_borrow_slope_1: float = PLF_VARIABLE_BORROW_SLOPE_1
         self.variable_borrow_slope_2: float = PLF_VARIABLE_BORROW_SLOPE_2
+        self.rb_factor = rb_factor
+        self.spread = spread
 
         # Reward Parameters
         self.previous_reserve_value: float = 0.0
+        self.previous_borrow_interest_rate: List[float] = [self.borrow_interest_rate, self.borrow_interest_rate]
+        self.previous_supply_interest_rate: List[float] = [self.supply_interest_rate, self.supply_interest_rate]
 
-        self.rb_factor = rb_factor
-        self.spread = spread
     @property
     def total_supply_token(self) -> float:
         return sum(self.supply_token.values())
@@ -177,6 +179,10 @@ class PLFPool:
         Function is being used to update the pool internal parameters
         :return: state
         """
+        self.previous_borrow_interest_rate.append(self.borrow_interest_rate)
+        self.previous_borrow_interest_rate.pop(0)
+        self.previous_supply_interest_rate.append(self.supply_interest_rate)
+        self.previous_supply_interest_rate.pop(0)
         self.accrue_interest()
         return self.get_state()
 
