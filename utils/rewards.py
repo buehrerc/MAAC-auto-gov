@@ -244,7 +244,8 @@ def supply_opportunity_cost(
     if not (action_id == 0 or action_id == 1):
         return REWARD_ILLEGAL_ACTION
 
-    best_pool_interest_rate = max([plf_pool.previous_supply_interest_rate[0] for lp in env.lending_protocol for plf_pool in lp.plf_pools])
+    best_pool_interest_rate = max([plf_pool.previous_supply_interest_rate[0]
+                                   for lp in env.lending_protocol for plf_pool in lp.plf_pools])
     best_market_interest_rate = max([token.supply_interest_rate for token in env.market.tokens.values()])
     best_interest_rate = max([best_pool_interest_rate, best_market_interest_rate])
     agent_interest_rate = (env.lending_protocol[idx_lp].plf_pools[idx_from].previous_supply_interest_rate[0]
@@ -281,7 +282,8 @@ def borrow_opportunity_cost(
     if not (action_id == 0 or action_id == 3):
         return REWARD_ILLEGAL_ACTION
 
-    best_pool_interest_rate = min([plf.previous_borrow_interest_rate[0] for lp in env.lending_protocol for plf in lp.plf_pools])
+    best_pool_interest_rate = min([plf.previous_borrow_interest_rate[0]
+                                   for lp in env.lending_protocol for plf in lp.plf_pools])
     best_market_interest_rate = min([token.borrow_interest_rate for token in env.market.tokens.values()])
     best_interest_rate = min(best_pool_interest_rate, best_market_interest_rate)
     agent_interest_rate = (env.lending_protocol[idx_lp].plf_pools[idx_from].previous_borrow_interest_rate[0]
@@ -299,7 +301,7 @@ def borrow_opportunity_cost(
     if opportunity_diff == 0:
         opportunity_diff = 1
     else:
-        opportunity_diff *= 100
+        opportunity_diff *= 10
     return borrow_value * opportunity_diff
 
 
