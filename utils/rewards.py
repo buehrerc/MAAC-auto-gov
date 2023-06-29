@@ -248,7 +248,7 @@ def supply_opportunity_cost(
                                    for lp in env.lending_protocol for plf_pool in lp.plf_pools])
     best_market_interest_rate = max([token.supply_interest_rate for token in env.market.tokens.values()])
     best_interest_rate = max([best_pool_interest_rate, best_market_interest_rate])
-    agent_interest_rate = (env.lending_protocol[idx_lp].plf_pools[idx_from].previous_supply_interest_rate[0]
+    agent_interest_rate = (env.lending_protocol[idx_lp].plf_pools[idx_to].previous_supply_interest_rate[0]
                            if action_id == 1
                            else best_market_interest_rate)
     supply_value = 10000
