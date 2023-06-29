@@ -1,6 +1,10 @@
 from utils.policies import BasePolicy
 import torch.nn.functional as F
 from utils.misc import onehot_from_logits, epsilon_greedy
+from envs.market_env.constants import (
+    EXPLORATION_RATE_1,
+    EXPLORATION_RATE_2
+)
 
 
 class CustomDiscretePolicy(BasePolicy):
@@ -9,13 +13,15 @@ class CustomDiscretePolicy(BasePolicy):
         input_dim: int,
         output_dim: int,
         exploration_limit: int = 0,
+        exploration_rate_1: float = EXPLORATION_RATE_1,
+        exploration_rate_2: float = EXPLORATION_RATE_2,
         **kwargs
     ):
         super(CustomDiscretePolicy, self).__init__(input_dim=input_dim, out_dim=output_dim, **kwargs)
         self.i = 0
         self.exploration_limit = exploration_limit
-        self.exploration_rate_1 = 1
-        self.exploration_rate_2 = 0.1
+        self.exploration_rate_1 = exploration_rate_1
+        self.exploration_rate_2 = exploration_rate_2
 
     def forward(self, obs, sample=True, return_all_probs=False,
                 return_log_pi=False, regularize=False,
