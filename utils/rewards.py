@@ -294,6 +294,8 @@ def borrow_opportunity_cost(
     opportunity_diff = best_interest_rate - agent_interest_rate
     if opportunity_diff == 0:
         opportunity_diff = 1
+    else:
+        opportunity_diff *= 10
     return borrow_value * opportunity_diff
 
 
