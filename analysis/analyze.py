@@ -96,8 +96,8 @@ def main(config):
             data=ep_data[:config.episode_length],
             columns=[f'agent{i}/'+s for s in state_mapping]
         )
-        tmp[f'reward/agent_{i}'] = replay_buffer.rew_buffs[i][config.episode_length:2*config.episode_length]
-        tmp[f'action/agent_{i}'] = np.argmax(replay_buffer.ac_buffs[i][config.episode_length:2*config.episode_length], axis=1)
+        tmp[f'reward/agent_{i}'] = replay_buffer.rew_buffs[i][:config.episode_length]
+        tmp[f'action/agent_{i}'] = np.argmax(replay_buffer.ac_buffs[i][:config.episode_length], axis=1)
         data_list.append(tmp)
     df = pd.concat(data_list, axis=1).fillna(0)
     df.to_csv(log_dir / 'episode_data.csv')
