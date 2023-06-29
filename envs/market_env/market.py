@@ -88,7 +88,7 @@ class Token:
         self,
         name: str = "dai",
         price: float = 1000.0,
-        borrow_interest_rate: float = 0.04,
+        borrow_interest_rate: float = 0.06,
         supply_interest_rate: float = 0.03,
         collateral_factor: float = 0.85,
         asset_volatility: float = 0.1,
