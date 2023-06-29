@@ -15,7 +15,7 @@
   },
   "lending_protocol": [
     {
-      "name": "lending_protocol_2",
+      "name": "lending_protocol_1",
       "plf_pool": [
         {
           "token_name": "TKN",
