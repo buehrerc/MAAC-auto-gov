@@ -295,7 +295,7 @@ def borrow_opportunity_cost(
     if opportunity_diff == 0:
         opportunity_diff = 1
     else:
-        return REWARD_ILLEGAL_ACTION
+        opportunity_diff *= 100
     return borrow_value * opportunity_diff
 
 
