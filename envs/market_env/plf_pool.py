@@ -193,8 +193,8 @@ class PLFPool:
         """
         # Accrue interest tokens
         for supply_hash in self.supply_token.keys():
-            if supply_hash == PLF_INITIATOR:  # No interest is accrued for initialization supply
-                continue
+            # if supply_hash == PLF_INITIATOR:  # No interest is accrued for initialization supply
+            #     continue
             daily_interest = self.supply_token[supply_hash] * (self._get_daily_interest(self.supply_interest_rate) - 1)
             daily_interest_fee = daily_interest * PLF_FEE
             assert daily_interest_fee >= 0, "Fee has to be positive"
@@ -203,8 +203,8 @@ class PLFPool:
 
         # Accrue borrow tokens
         for borrow_hash in self.borrow_token.keys():
-            if borrow_hash == PLF_INITIATOR:  # No interest is accrued for initialization borrow
-                continue
+            # if borrow_hash == PLF_INITIATOR:  # No interest is accrued for initialization borrow
+            #     continue
             daily_interest = self.borrow_token[borrow_hash] * (self._get_daily_interest(self.borrow_interest_rate) - 1)
             daily_interest_fee = daily_interest * PLF_FEE
             assert daily_interest_fee >= 0, "Fee has to be positive"
