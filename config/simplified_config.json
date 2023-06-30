@@ -38,12 +38,12 @@
       "hidden_dim": 128,
       "onehot_dim": 0,
       "balance": {
-        "USDC": 25000
+        "TKN": 25000
       }
     }
   ],
   "parameter": {
-    "n_rollout_threads": 12,
+    "n_rollout_threads": 1,
     "buffer_length": 10000,
     "n_episodes": 2020,
     "episode_length": 25,
