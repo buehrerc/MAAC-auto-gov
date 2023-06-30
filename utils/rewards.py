@@ -244,7 +244,7 @@ def supply_opportunity_cost(
     if not (action_id == 0 or action_id == 1):
         return REWARD_ILLEGAL_ACTION
 
-    best_pool_interest_rate = max([plf_pool.previous_supply_interest_rate[0]
+    best_pool_interest_rate = max([plf_pool.supply_interest_rate
                                    for lp in env.lending_protocol for plf_pool in lp.plf_pools])
     best_market_interest_rate = max([token.supply_interest_rate for token in env.market.tokens.values()])
     best_interest_rate = max([best_pool_interest_rate, best_market_interest_rate])
@@ -259,7 +259,7 @@ def supply_opportunity_cost(
     # Best interest rate is provided by a pool
     lending_protocol = env.lending_protocol[idx_lp]
     plf_pool = lending_protocol.plf_pools[idx_to]
-    opportunity_diff = plf_pool.previous_supply_interest_rate[0] - best_interest_rate
+    opportunity_diff = plf_pool.supply_interest_rate - best_interest_rate
     supply_hash, _ = lending_protocol.supply_record[agent_id, idx_to][-1]
     # If the picked lending pool offers the best interest rate -> use borrow exposure instead
     if opportunity_diff == 0:
