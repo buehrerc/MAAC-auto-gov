@@ -5,11 +5,6 @@
         "name": "TKN",
         "price": 100,
         "asset_volatility": 0.2
-      },
-      {
-        "name": "USDC",
-        "price": 100,
-        "asset_volatility": 0.1
       }
     ]
   },
@@ -21,11 +16,6 @@
           "token_name": "TKN",
           "initial_starting_funds": 10000,
           "collateral_factor": 0.85
-        },
-        {
-          "token_name": "USDC",
-          "initial_starting_funds": 10000,
-          "collateral_factor": 0.85
         }
       ]
     },
@@ -34,11 +24,6 @@
       "plf_pool": [
         {
           "token_name": "TKN",
-          "initial_starting_funds": 10000,
-          "collateral_factor": 0.85
-        },
-        {
-          "token_name": "USDC",
           "initial_starting_funds": 10000,
           "collateral_factor": 0.85
         }
@@ -72,8 +57,7 @@
       "hidden_dim": 128,
       "onehot_dim": 0,
       "balance": {
-        "TKN": 0,
-        "USDC": 1000
+        "USDC": 25000
       }
     }
   ],
