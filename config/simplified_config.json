@@ -52,7 +52,7 @@
       "type": "governance",
       "reward": [
         [
-          100,
+          1,
           "profit"
         ]
       ],
@@ -66,7 +66,7 @@
       "type": "governance",
       "reward": [
         [
-          100,
+          1,
           "profit"
         ]
       ],
@@ -87,8 +87,8 @@
       "hidden_dim": 128,
       "onehot_dim": 0,
       "balance": {
-        "TKN": 100000,
-        "USDC": 100000
+        "TKN": 0,
+        "USDC": 1000000
       }
     }
   ],
