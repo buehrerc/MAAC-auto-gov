@@ -80,7 +80,7 @@
       "reward": [
         [
           1,
-          "supply_opportunity_cost"
+          "borrow_opportunity_cost"
         ]
       ],
       "lr": 1e-4,
