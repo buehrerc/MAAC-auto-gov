@@ -34,12 +34,12 @@
       "plf_pool": [
         {
           "token_name": "TKN",
-          "initial_starting_funds": 10000,
+          "initial_starting_funds": 100,
           "collateral_factor": 0.85
         },
         {
           "token_name": "USDC",
-          "initial_starting_funds": 10000,
+          "initial_starting_funds": 100,
           "collateral_factor": 0.85
         }
       ]
