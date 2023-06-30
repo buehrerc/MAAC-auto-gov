@@ -252,7 +252,7 @@ def supply_opportunity_cost(
                            if action_id == 1
                            else best_market_interest_rate)
 
-    if agent_interest_rate > best_interest_rate:
+    if agent_interest_rate >= best_interest_rate:
         return -REWARD_ILLEGAL_ACTION
     else:
         return REWARD_ILLEGAL_ACTION
