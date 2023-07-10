@@ -10,7 +10,10 @@ from envs.market_env.constants import (
     CONFIG_TOKEN,
     CONFIG_LENDING_PROTOCOL,
     CONFIG_PLF_POOL,
-    CONFIG_AGENT
+    CONFIG_AGENT,
+    EXPLORATION_RATE_1,
+    EXPLORATION_RATE_2,
+    EXPLORATION_RATIO
 )
 
 
@@ -104,3 +107,17 @@ def encode_user_action(plf_pool_in_lp: List[int]) -> Dict[int, Tuple]:
                 encoding[i+1] = (4, i_lp, n, m)   # Repay
                 i += 2
     return encoding
+
+
+def exploration_rate(
+    i,
+    exploration_limit,
+    exploration_rate_1=EXPLORATION_RATE_1,
+    exploration_rate_2=EXPLORATION_RATE_2
+):
+    if i < exploration_limit:
+        return exploration_rate_1
+    elif i < exploration_limit * EXPLORATION_RATIO:
+        return exploration_rate_2
+    else:
+        return 0

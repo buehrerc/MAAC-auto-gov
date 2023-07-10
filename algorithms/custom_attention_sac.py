@@ -52,3 +52,14 @@ class CustomAttentionSAC(AttentionSAC):
                           'attend_heads': attend_heads,
                           'agent_init_params': agent_init_params,
                           'sa_size': sa_size}
+
+    def step(self, observations, explore=False, exploration_rate=0.1):
+        """
+        Take a step forward in environment with all agents
+        Inputs:
+            observations: List of observations for each agent
+        Outputs:
+            actions: List of actions for each agent
+        """
+        return [a.step(obs, explore=explore, exploration_rate=exploration_rate)
+                for a, obs in zip(self.agents, observations)]

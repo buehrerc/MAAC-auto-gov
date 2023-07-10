@@ -13,10 +13,9 @@ from pathlib import Path
 from algorithms.custom_attention_sac import CustomAttentionSAC
 from utils.make_agent import make_agent
 from utils.custom_wrappers import CustomWrapper, CustomDummyWrapper
-from algorithms.attention_sac import AttentionSAC
 from envs.market_env.env import MultiAgentEnv
-from envs.market_env.constants import CONFIG_PARAM
-from envs.market_env.utils import generate_state_mapping
+from envs.market_env.constants import CONFIG_PARAM, EXPLORATION_RATIO
+from envs.market_env.utils import generate_state_mapping, exploration_rate
 from utils.buffer import ReplayBuffer
 from tensorboardX import SummaryWriter
 
@@ -56,10 +55,7 @@ def init_params(config, env_config):
     random.seed(config.seed)
     np.random.seed(config.seed)
 
-    # Fix Exploration Limit based on configs
-    exploration_limit = config.buffer_length // (config.n_rollout_threads * config.episode_length)
-
-    return logger, run_num, run_dir, log_dir, state_mapping, exploration_limit
+    return logger, run_num, run_dir, log_dir, state_mapping
 
 
 def init_env(env_config, seed):
@@ -84,7 +80,7 @@ def make_parallel_env(env_config, n_rollout_threads, seed):
 
 def train(
     env: CustomWrapper,
-    model: AttentionSAC,
+    model: CustomAttentionSAC,
     replay_buffer: ReplayBuffer,
     state_mapping: List[str],
     logger: SummaryWriter,
@@ -106,7 +102,10 @@ def train(
                                   requires_grad=False)
                          for i in range(model.nagents)]
             # get actions as torch Variables
-            torch_agent_actions = model.step(torch_obs, explore=True)
+            iterations = (ep_i * config.episode_length + (et_i+1))*config.n_rollout_threads
+            exp_rate = exploration_rate(iterations, config.buffer_length // EXPLORATION_RATIO)
+            print(exp_rate)
+            torch_agent_actions = model.step(torch_obs, explore=True, exploration_rate=exp_rate)
             # convert actions to numpy arrays
             agent_actions = [ac.data.numpy() for ac in torch_agent_actions]
 
@@ -166,12 +165,12 @@ def train(
 
 
 def run(config, env_config):
-    logger, run_num, run_dir, log_dir, state_mapping, exploration_limit = init_params(config, env_config)
+    logger, run_num, run_dir, log_dir, state_mapping = init_params(config, env_config)
     init_logger(log_dir)
 
     env = make_parallel_env(env_config, config.n_rollout_threads, config.seed)
     obsp, acsp = env.get_spaces()
-    agents = make_agent(env_config, obsp, acsp, exploration_limit)
+    agents = make_agent(env_config, obsp, acsp)
 
     model = CustomAttentionSAC(
         env=env,

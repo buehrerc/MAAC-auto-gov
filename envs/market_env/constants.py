@@ -56,6 +56,7 @@ LP_DEPOSIT_AMOUNT = 10
 # 3.3) Learning Framework Constants
 EXPLORATION_RATE_1 = 1
 EXPLORATION_RATE_2 = 0.1
+EXPLORATION_RATIO = 5
 
 # 4) Gym Constants
 # 4.1) PLF Pool
