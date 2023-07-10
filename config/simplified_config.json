@@ -51,7 +51,7 @@
       "reward": [
         [
           1,
-          "supply_exposure"
+          "supply_opportunity_cost"
         ]
       ],
       "lr": 1e-4,
