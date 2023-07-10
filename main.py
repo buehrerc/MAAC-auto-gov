@@ -57,7 +57,7 @@ def init_params(config, env_config):
     np.random.seed(config.seed)
 
     # Fix Exploration Limit based on configs
-    exploration_limit = config.buffer_length // (config.n_rollout_threads * config.episode_length)
+    exploration_limit = config.buffer_length // config.n_rollout_threads
 
     return logger, run_num, run_dir, log_dir, state_mapping, exploration_limit
 

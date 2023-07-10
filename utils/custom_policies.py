@@ -30,7 +30,7 @@ class CustomDiscretePolicy(BasePolicy):
         probs = F.softmax(out, dim=1)
         on_gpu = next(self.parameters()).is_cuda
         if sample:
-            epsilon = self.exploration_rate_1 if self.i < self.exploration_limit else self.exploration_rate_2
+            epsilon = self._exploration_rate()
             int_act, act = epsilon_greedy(probs, epsilon=epsilon, use_cuda=on_gpu)
         else:
             act = onehot_from_logits(probs)
@@ -50,3 +50,11 @@ class CustomDiscretePolicy(BasePolicy):
         if len(rets) == 1:
             return rets[0]
         return rets
+
+    def _exploration_rate(self):
+        if self.i < self.exploration_limit:
+            return self.exploration_rate_1
+        elif self.i < self.exploration_limit * 5:
+            return self.exploration_rate_2
+        else:
+            return 0
