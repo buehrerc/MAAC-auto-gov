@@ -51,7 +51,7 @@
       "reward": [
         [
           1,
-          "borrow_exposure"
+          "borrow_opportunity_cost"
         ]
       ],
       "lr": 1e-4,
