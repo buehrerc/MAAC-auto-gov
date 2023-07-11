@@ -80,6 +80,23 @@
       "reward": [
         [
           1,
+          "supply_opportunity_cost"
+        ]
+      ],
+      "lr": 1e-4,
+      "hidden_dim": 128,
+      "onehot_dim": 0,
+      "balance": {
+        "TKN": 100000,
+        "USDC": 100000
+      }
+    },
+    {
+      "name": "UserAgent1",
+      "type": "user",
+      "reward": [
+        [
+          1,
           "borrow_opportunity_cost"
         ]
       ],
